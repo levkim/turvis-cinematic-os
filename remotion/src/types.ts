@@ -1,49 +1,35 @@
-export type ShotType =
-  | 'drone-reveal'
-  | 'drone-orbit'
-  | 'drone-top-down'
-  | 'drone-forward-push'
-  | 'drone-pull-back'
-  | 'vehicle-journey'
-  | 'walking-scale'
-  | 'camp-life'
-  | 'geological-detail'
-  | 'hero-landscape'
-  | 'night-sky'
-  | 'transition';
-
-export type BeatType =
-  | 'threshold'
-  | 'discovery'
-  | 'texture'
-  | 'scale'
-  | 'arrival'
-  | 'cosmic';
-
-export type TransitionType = 'cut' | 'cross-dissolve' | 'fade' | 'dip-to-black';
-
-export interface TimelineClip {
+export interface RemotionClip {
   id: string;
+  type: 'video-placeholder' | 'video';
   startFrame: number;
   durationInFrames: number;
+  beat: string;
   src: string;
-  shotType: ShotType;
-  beatType: BeatType;
-  emotion: string;
   subtitle?: string;
-  titleCard?: string;
-  transition?: TransitionType;
-  objectFit?: 'cover' | 'contain';
-  scaleFrom?: number;
-  scaleTo?: number;
+  subtitleStyle?: string;
+  transition?: string;
+  status?: string;
 }
 
-export interface DocumentaryTimeline {
-  id: string;
-  title: string;
-  fps: number;
-  width: number;
-  height: number;
-  durationInFrames: number;
-  clips: TimelineClip[];
+export interface TurvisRemotionTimeline {
+  schema: string;
+  project: {
+    id?: string;
+    title?: string;
+  };
+  composition: {
+    fps: number;
+    durationInFrames: number;
+    aspectRatio: string;
+    resolution: string;
+    language: string;
+    width: number;
+    height: number;
+  };
+  audio: {
+    generateNarration: boolean;
+    generateMusic: boolean;
+    generateSoundEffects: boolean;
+  };
+  clips: RemotionClip[];
 }
