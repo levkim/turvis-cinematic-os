@@ -1,0 +1,2 @@
+# No external Python packages required for v0.1
+# FFmpeg / ffprobe should be installed separately and available in PATH.
