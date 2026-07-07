@@ -1,59 +1,216 @@
-# TURVIS Cinematic OS
+# TURVIS Studio / Cinematic OS
 
-**AI-powered Adventure Documentary Production System**
+**Local-first AI Adventure Documentary Production System**
 
-TURVIS Cinematic OS is a creative operating system for generating cinematic adventure documentaries with AI, Remotion, Cowork, and future multi-agent production workflows.
+TURVIS Studio is a local-first production workflow for creating cinematic adventure documentaries with structured project data, footage memory, story beats, Remotion timelines, and QC.
 
-This repository is not a simple prompt collection. It is a production manual, creative language system, and technical foundation for building AI documentary directors.
-
----
-
-## Mission
-
-We do not create travel videos.
-
-We create adventure documentaries that allow the audience to experience exploration.
-
-The goal is to make every generated film feel cinematic, intentional, quiet, powerful, and emotionally immersive.
+This is not a prompt collection.
+It is an AI-assisted documentary studio architecture.
 
 ---
 
 ## Core Principle
 
-> AI does not edit videos.  
-> AI directs cinematic experiences.
+> Local first.  
+> API optional.  
+> Projects are data.  
+> Apps are engines.  
+> Remotion renders locally.
 
 ---
 
-## Repository Structure
+## What It Does Now
+
+Current Build Mode pipeline:
 
 ```text
-turvis-cinematic-os/
-├── docs/
-│   ├── TCL/
-│   └── Director/
-├── prompts/
-├── agents/
-├── remotion/
-├── templates/
-├── examples/
-├── projects/
-│   └── mangystau/
-└── assets/
+Project Wizard
+↓
+project.yaml
+↓
+Project Pipeline
+↓
+Validate
+↓
+Footage Analyzer
+↓
+Review Queue
+↓
+Director Handoff
+↓
+Director Prep
+↓
+Story Beats / Storyboard
+↓
+Timeline Draft
+↓
+Remotion Bridge
+↓
+Remotion Sync
+↓
+QC Report
+↓
+Preview / Render
 ```
 
 ---
 
-## Sprint 1
+## Quickstart
 
-Sprint 1 defines the creative foundation of the system.
+### 1. Create a project
 
-- `TCL-001-Foundation.md`
-- `TCL-002-Adventure-DNA.md`
-- `TCL-003-Camera-Drone-Language.md`
-- `TCL-004-Story-Beat-Engine.md`
-- `TCL-005-Documentary-Director.md`
-- `Director-Core.md`
+```bash
+python apps/turvis-studio/turvis.py create \
+  --title "Kazakhstan Mangystau Documentary" \
+  --id kazakhstan-mangystau-documentary \
+  --type documentary \
+  --country Kazakhstan \
+  --region Mangystau \
+  --destination "Bozzhyra" \
+  --duration 240 \
+  --aspect "16:9"
+```
+
+This creates:
+
+```text
+projects/kazakhstan-mangystau-documentary/
+├── project.yaml
+├── narration.md
+└── README.md
+```
+
+---
+
+### 2. Edit project.yaml
+
+Set your footage folder:
+
+```yaml
+paths:
+  footage: D:/Your/Footage/Folder
+  keyframes: assets/kazakhstan-mangystau-documentary/keyframes
+  memory: knowledge/footage/kazakhstan-mangystau-documentary
+  narration: projects/kazakhstan-mangystau-documentary/narration.md
+  director_handoff: projects/kazakhstan-mangystau-documentary/director-handoff.md
+```
+
+---
+
+### 3. Paste narration
+
+Edit:
+
+```text
+projects/kazakhstan-mangystau-documentary/narration.md
+```
+
+---
+
+### 4. Run the full pipeline
+
+```bash
+python apps/turvis-studio/turvis.py pipeline \
+  --project-folder projects/kazakhstan-mangystau-documentary \
+  --include-review
+```
+
+Generated outputs include:
+
+```text
+director-prep.md
+story-beats.md
+storyboard.md
+timeline-draft.md
+timeline-draft.json
+timeline.remotion.json
+qc-report.md
+```
+
+The pipeline also syncs the project timeline into:
+
+```text
+remotion/src/data/turvis.timeline.ts
+```
+
+---
+
+### 5. Preview in Remotion
+
+```bash
+python apps/turvis-studio/turvis.py preview --install
+```
+
+After first install:
+
+```bash
+python apps/turvis-studio/turvis.py preview
+```
+
+---
+
+### 6. Render
+
+```bash
+python apps/turvis-studio/turvis.py render
+```
+
+Output:
+
+```text
+remotion/out/turvis-documentary.mp4
+```
+
+---
+
+## Main Apps
+
+```text
+apps/
+├── turvis-studio/       unified CLI
+├── project-wizard/      project creation
+├── project-pipeline/    full local pipeline
+├── footage-analyzer/    footage scan, keyframes, memory, search, handoff
+├── director-prep/       director prep package
+├── director-engine/     story beat and storyboard draft
+├── timeline-builder/    timeline draft generation
+├── remotion-bridge/     timeline.remotion.json builder
+├── remotion-sync/       sync project timeline into Remotion app
+├── qc-engine/           project output validation
+└── render-runner/       Remotion preview/render runner
+```
+
+---
+
+## Architecture Rule
+
+```text
+apps/       universal engines
+projects/   active project data
+examples/   sample projects only
+docs/       system manuals
+knowledge/  reusable memory
+remotion/   local render engine
+```
+
+If a project name appears inside engine code, the architecture is wrong.
+
+---
+
+## Remotion
+
+The Remotion app is universal.
+It reads:
+
+```text
+remotion/src/data/turvis.timeline.ts
+```
+
+That file is generated from each project's:
+
+```text
+projects/[project]/timeline.remotion.json
+```
 
 ---
 
@@ -64,16 +221,14 @@ TURVIS documentaries should feel closer to:
 - Netflix Documentary
 - BBC Earth
 - National Geographic
-- Apple TV+ Nature
 - Patagonia Films
 - DJI cinematic aerial films
 
-They should never feel like:
+They should not feel like:
 
 - Travel vlog
-- Tourism promotion video
-- Social media reel
 - Random montage
+- Low-end tourism promotion
 
 ---
 
