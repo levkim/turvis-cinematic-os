@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TURVIS Footage Memory Schema",
+  "type": "object",
+  "required": [
+    "clip_id",
+    "original_filename",
+    "project",
+    "location",
+    "camera",
+    "emotion_tags",
+    "story_tags",
+    "scores",
+    "best_usage"
+  ],
+  "properties": {
+    "clip_id": {
+      "type": "string",
+      "description": "Unique TURVIS clip ID, e.g. MG-D3-0001"
+    },
+    "original_filename": {
+      "type": "string"
+    },
+    "asset_path": {
+      "type": "string"
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "series": { "type": "string" },
+        "episode": { "type": "string" },
+        "destination": { "type": "string" },
+        "country": { "type": "string" },
+        "region": { "type": "string" }
+      }
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "sub_location": { "type": "string" },
+        "gps": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lon": { "type": "number" }
+          }
+        }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["drone", "mirrorless", "action-camera", "phone", "unknown"]
+        },
+        "shot_type": { "type": "string" },
+        "movement": { "type": "string" },
+        "altitude": { "type": "string" },
+        "lens_feel": { "type": "string" },
+        "stability": { "type": "string" }
+      }
+    },
+    "visual_context": {
+      "type": "object",
+      "properties": {
+        "time_of_day": { "type": "string" },
+        "weather": { "type": "string" },
+        "light_quality": { "type": "string" },
+        "landscape_type": { "type": "string" },
+        "human_presence": { "type": "boolean" },
+        "vehicle_presence": { "type": "boolean" }
+      }
+    },
+    "emotion_tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "story_tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "best_usage": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "scores": {
+      "type": "object",
+      "properties": {
+        "composition": { "type": "number", "minimum": 0, "maximum": 100 },
+        "light": { "type": "number", "minimum": 0, "maximum": 100 },
+        "movement": { "type": "number", "minimum": 0, "maximum": 100 },
+        "stability": { "type": "number", "minimum": 0, "maximum": 100 },
+        "emotion": { "type": "number", "minimum": 0, "maximum": 100 },
+        "story_relevance": { "type": "number", "minimum": 0, "maximum": 100 },
+        "overall": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "hero_shot": { "type": "boolean" },
+        "avoid": { "type": "boolean" },
+        "needs_review": { "type": "boolean" }
+      }
+    },
+    "director_notes": {
+      "type": "string"
+    }
+  }
+}
