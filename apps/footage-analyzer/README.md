@@ -1,6 +1,6 @@
 # Footage Analyzer CLI
 
-Version: v0.5  
+Version: v0.6  
 Project: TURVIS Studio / Adventure Memory Engine
 
 ---
@@ -15,8 +15,29 @@ This tool does not require paid AI API calls.
 
 ---
 
-## What v0.5 Does
+## Architecture Rule
 
+Apps do not know projects.
+
+Projects are data.
+
+The preferred workflow is now:
+
+```bash
+--project-folder projects/current
+```
+
+The app reads:
+
+```text
+projects/current/project.yaml
+```
+
+---
+
+## What v0.6 Does
+
+- Reads project configuration from `project.yaml`
 - Scans a local folder for video files
 - Creates stable TURVIS clip IDs
 - Extracts basic metadata with `ffprobe` if available
@@ -28,15 +49,6 @@ This tool does not require paid AI API calls.
 - Generates a review queue from clips needing visual review
 - Searches Adventure Memory by query, emotion, story, shot type, location, score, and hero flag
 - Creates a Director-ready footage handoff grouped by story purpose
-
----
-
-## What v0.5 Does Not Do Yet
-
-- It does not visually understand the clip by itself
-- It does not call any AI API
-- It does not select final documentary shots automatically
-- It does not generate Remotion timelines automatically
 
 ---
 
@@ -54,21 +66,56 @@ ffprobe -version
 
 ---
 
-## Step 1 — Analyze Footage
+## Step 0 — Create Project Folder
 
-From repository root:
+Create or copy a project spec:
 
 ```bash
-python apps/footage-analyzer/footage_analyzer.py \
-  --input "D:/Mangystau/Day3" \
-  --project mangystau \
-  --episode day3 \
-  --prefix MG-D3 \
-  --country Kazakhstan \
-  --region Mangystau \
-  --destination "Zhanaozen to Bozzhyra" \
-  --output knowledge/footage/mangystau/day3 \
-  --keyframes assets/mangystau/day3/keyframes
+mkdir -p projects/current
+cp templates/project.yaml projects/current/project.yaml
+```
+
+Edit:
+
+```text
+projects/current/project.yaml
+```
+
+Set:
+
+```yaml
+paths:
+  footage: D:/Your/Footage/Folder
+  keyframes: assets/current/keyframes
+  memory: knowledge/footage/current
+  director_handoff: projects/current/director-handoff.md
+```
+
+---
+
+## Step 1 — Analyze Footage From Project Folder
+
+Preferred universal command:
+
+```bash
+python apps/footage-analyzer/analyze_project.py \
+  --project-folder projects/current
+```
+
+Optional prefix override:
+
+```bash
+python apps/footage-analyzer/analyze_project.py \
+  --project-folder projects/current \
+  --prefix EXP-001
+```
+
+Skip keyframe extraction:
+
+```bash
+python apps/footage-analyzer/analyze_project.py \
+  --project-folder projects/current \
+  --skip-keyframes
 ```
 
 ---
@@ -77,7 +124,7 @@ python apps/footage-analyzer/footage_analyzer.py \
 
 ```bash
 python apps/footage-analyzer/review_queue.py \
-  --memory knowledge/footage/mangystau/day3
+  --memory knowledge/footage/current
 ```
 
 ---
@@ -88,7 +135,7 @@ Search by emotion:
 
 ```bash
 python apps/footage-analyzer/footage_search.py \
-  --memory knowledge/footage/mangystau/day3 \
+  --memory knowledge/footage/current \
   --emotion isolation \
   --limit 5
 ```
@@ -97,7 +144,7 @@ Search by story and shot type:
 
 ```bash
 python apps/footage-analyzer/footage_search.py \
-  --memory knowledge/footage/mangystau/day3 \
+  --memory knowledge/footage/current \
   --story arrival \
   --shot drone-reveal \
   --min-score 75
@@ -105,30 +152,22 @@ python apps/footage-analyzer/footage_search.py \
 
 ---
 
-## Step 4 — Create Director Handoff
+## Step 4 — Create Director Handoff From Project Folder
 
-Create a Director-ready candidate pool grouped by story purpose:
+Preferred universal command:
 
 ```bash
-python apps/footage-analyzer/director_handoff.py \
-  --memory knowledge/footage/mangystau/day3 \
-  --project "Mangystau Day 3" \
+python apps/footage-analyzer/handoff_project.py \
+  --project-folder projects/current \
   --min-score 70 \
   --exclude-avoid
-```
-
-This creates:
-
-```text
-knowledge/footage/mangystau/day3/director-handoff.md
 ```
 
 Include clips still marked as `needs_review` when testing early:
 
 ```bash
-python apps/footage-analyzer/director_handoff.py \
-  --memory knowledge/footage/mangystau/day3 \
-  --project "Mangystau Day 3" \
+python apps/footage-analyzer/handoff_project.py \
+  --project-folder projects/current \
   --include-review
 ```
 
@@ -137,38 +176,52 @@ python apps/footage-analyzer/director_handoff.py \
 ## Output
 
 ```text
-knowledge/footage/mangystau/day3/
-├── MG-D3-0001.md
-├── MG-D3-0001.json
-├── MG-D3-0002.md
-├── MG-D3-0002.json
+knowledge/footage/current/
+├── EXP-001-0001.md
+├── EXP-001-0001.json
+├── EXP-001-0002.md
+├── EXP-001-0002.json
 ├── batch-summary.md
 ├── review-queue.md
 ├── search-results.md
 └── director-handoff.md
 
-assets/mangystau/day3/keyframes/
-├── MG-D3-0001/
-│   ├── MG-D3-0001_05.jpg
-│   ├── MG-D3-0001_25.jpg
-│   ├── MG-D3-0001_50.jpg
-│   ├── MG-D3-0001_75.jpg
-│   └── MG-D3-0001_95.jpg
+assets/current/keyframes/
+├── EXP-001-0001/
+│   ├── EXP-001-0001_05.jpg
+│   ├── EXP-001-0001_25.jpg
+│   ├── EXP-001-0001_50.jpg
+│   ├── EXP-001-0001_75.jpg
+│   └── EXP-001-0001_95.jpg
 ```
+
+---
+
+## Legacy Direct Commands
+
+The lower-level scripts still exist for power users:
+
+- `footage_analyzer.py`
+- `review_queue.py`
+- `footage_search.py`
+- `director_handoff.py`
+
+But the recommended workflow is project-folder based.
 
 ---
 
 ## Review Workflow
 
-1. Run Footage Analyzer CLI.
-2. Generate `review-queue.md`.
-3. Open generated keyframes.
-4. Use `prompts/keyframe-review-prompt-v0.1.md` with Cowork, Codex, ChatGPT, or manual review.
-5. Update each `.md` and `.json` memory file with visual analysis.
-6. Set `needs_review` to false only when confident.
-7. Use `footage_search.py` to find clips by emotion, story, and cinematic purpose.
-8. Use `director_handoff.py` to create a candidate pool for the Documentary Director.
-9. Director builds storyboard and timeline from Adventure Memory.
+1. Create or update `project.yaml`.
+2. Run `analyze_project.py`.
+3. Generate `review-queue.md`.
+4. Open generated keyframes.
+5. Use `prompts/keyframe-review-prompt-v0.1.md` with Cowork, Codex, ChatGPT, or manual review.
+6. Update each `.md` and `.json` memory file with visual analysis.
+7. Set `needs_review` to false only when confident.
+8. Use `footage_search.py` to find clips by emotion, story, and cinematic purpose.
+9. Use `handoff_project.py` to create a candidate pool for the Documentary Director.
+10. Director builds storyboard and timeline from Adventure Memory.
 
 ---
 
