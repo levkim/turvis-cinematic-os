@@ -57,6 +57,20 @@ Preview / Render
 
 ## Quickstart
 
+### 0. Check system
+
+```bash
+python apps/turvis-studio/turvis.py doctor
+```
+
+Full operator manual:
+
+```text
+docs/Operator/Studio-Operator-Manual.md
+```
+
+---
+
 ### 1. Create a project
 
 ```bash
@@ -168,6 +182,7 @@ remotion/out/turvis-documentary.mp4
 ```text
 apps/
 ├── turvis-studio/       unified CLI
+├── system-doctor/       local environment check
 ├── project-wizard/      project creation
 ├── project-pipeline/    full local pipeline
 ├── footage-analyzer/    footage scan, keyframes, memory, search, handoff
