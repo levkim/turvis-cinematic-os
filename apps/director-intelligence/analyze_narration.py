@@ -11,11 +11,14 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+CURRENT_DIR = Path(__file__).resolve().parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
 
 from apps.common.project_config import get_nested, load_project_config  # noqa: E402
-from apps.director_intelligence.adventure_dna import apply_adventure_dna, load_adventure_dna  # noqa: E402
+from adventure_dna import apply_adventure_dna, load_adventure_dna  # noqa: E402
 
 EMOTION_KEYWORDS = {
     "awe": ["마침내", "거대한", "우주", "깊은", "경이", "솟아", "심장"],
