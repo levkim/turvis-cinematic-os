@@ -1,6 +1,6 @@
 # Footage Analyzer CLI
 
-Version: v0.3  
+Version: v0.4  
 Project: TURVIS Studio / Adventure Memory Engine
 
 ---
@@ -9,13 +9,13 @@ Project: TURVIS Studio / Adventure Memory Engine
 
 Footage Analyzer CLI is the first local-first executable tool for TURVIS Studio.
 
-It scans a local footage folder, extracts basic video metadata, extracts review keyframes, creates placeholder Adventure Memory records, and prepares clips for later AI-assisted or human review.
+It scans a local footage folder, extracts basic video metadata, extracts review keyframes, creates placeholder Adventure Memory records, prepares clips for later AI-assisted or human review, and searches reviewed footage memory.
 
 This tool does not require paid AI API calls.
 
 ---
 
-## What v0.3 Does
+## What v0.4 Does
 
 - Scans a local folder for video files
 - Creates stable TURVIS clip IDs
@@ -26,14 +26,15 @@ This tool does not require paid AI API calls.
 - Creates a batch summary
 - Marks clips as `needs_review: true`
 - Generates a review queue from clips needing visual review
+- Searches Adventure Memory by query, emotion, story, shot type, location, score, and hero flag
 
 ---
 
-## What v0.3 Does Not Do Yet
+## What v0.4 Does Not Do Yet
 
 - It does not visually understand the clip by itself
 - It does not call any AI API
-- It does not select final documentary shots
+- It does not select final documentary shots automatically
 - It does not generate Remotion timelines automatically
 
 ---
@@ -106,6 +107,47 @@ python apps/footage-analyzer/review_queue.py \
 
 ---
 
+## Step 3 — Search Adventure Memory
+
+Search by emotion:
+
+```bash
+python apps/footage-analyzer/footage_search.py \
+  --memory knowledge/footage/mangystau/day3 \
+  --emotion isolation \
+  --limit 5
+```
+
+Search by story and shot type:
+
+```bash
+python apps/footage-analyzer/footage_search.py \
+  --memory knowledge/footage/mangystau/day3 \
+  --story arrival \
+  --shot drone-reveal \
+  --min-score 75
+```
+
+Search for hero shots only:
+
+```bash
+python apps/footage-analyzer/footage_search.py \
+  --memory knowledge/footage/mangystau/day3 \
+  --hero-only \
+  --exclude-avoid
+```
+
+Write search results to Markdown:
+
+```bash
+python apps/footage-analyzer/footage_search.py \
+  --memory knowledge/footage/mangystau/day3 \
+  --query "golden hour desert" \
+  --output knowledge/footage/mangystau/day3/search-results.md
+```
+
+---
+
 ## Output
 
 ```text
@@ -115,7 +157,8 @@ knowledge/footage/mangystau/day3/
 ├── MG-D3-0002.md
 ├── MG-D3-0002.json
 ├── batch-summary.md
-└── review-queue.md
+├── review-queue.md
+└── search-results.md
 
 assets/mangystau/day3/keyframes/
 ├── MG-D3-0001/
@@ -136,7 +179,8 @@ assets/mangystau/day3/keyframes/
 4. Use `prompts/keyframe-review-prompt-v0.1.md` with Cowork, Codex, ChatGPT, or manual review.
 5. Update each `.md` and `.json` memory file with visual analysis.
 6. Set `needs_review` to false only when confident.
-7. Director can then search Adventure Memory.
+7. Use `footage_search.py` to find clips by emotion, story, and cinematic purpose.
+8. Director can then build storyboard and timeline from Adventure Memory.
 
 ---
 
