@@ -1,0 +1,40 @@
+project:
+  id: current-project
+  title: Untitled Project
+  type: documentary
+  status: draft
+
+output:
+  aspect_ratio: "16:9"
+  resolution: "3840x2160"
+  target_duration_seconds: 240
+  language: ko
+
+style:
+  references:
+    - Netflix Documentary
+    - BBC Earth
+    - National Geographic
+  mood:
+    - cinematic
+    - quiet
+    - immersive
+
+locations:
+  country: unknown
+  region: unknown
+  destination: unknown
+  route: unknown
+
+paths:
+  footage: assets/current/raw
+  keyframes: assets/current/keyframes
+  memory: knowledge/footage/current
+  narration: projects/current/narration.md
+  director_handoff: projects/current/director-handoff.md
+
+rules:
+  generate_audio: false
+  generate_music: false
+  generate_sound_effects: false
+  local_first: true
