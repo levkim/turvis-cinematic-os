@@ -20,6 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="TURVIS Studio unified CLI")
     sub = parser.add_subparsers(dest="command", required=True)
 
+    sub.add_parser("doctor", help="Check local system readiness")
+
     create = sub.add_parser("create", help="Create a new project")
     create.add_argument("--title", required=True)
     create.add_argument("--id", default=None)
@@ -49,6 +51,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+
+    if args.command == "doctor":
+        run([sys.executable, "apps/system-doctor/doctor.py"])
+        return
 
     if args.command == "create":
         command = [
