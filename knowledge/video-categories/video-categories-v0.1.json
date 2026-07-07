@@ -1,0 +1,75 @@
+{
+  "schema": "turvis.video_categories.v0.1",
+  "categories": [
+    {
+      "id": "adventure",
+      "label_ko": "어드벤쳐",
+      "label_en": "Adventure",
+      "description": "오지, 원정, 오버랜딩, 탐험형 여행 영상",
+      "default_genres": ["travel-film", "expedition-film", "cinematic-documentary"],
+      "preferred_dna": ["adventure-dna"],
+      "default_goal": "immerse-and-inspire",
+      "timeline_bias": "landscape-led"
+    },
+    {
+      "id": "ski-travel",
+      "label_ko": "스키여행",
+      "label_en": "Ski Travel",
+      "description": "스키장, 프리라이드, 백컨트리, 헬리스키, 파우더 여행 영상",
+      "default_genres": ["ski-film", "travel-film", "resort-promotion"],
+      "preferred_dna": ["adventure-dna", "ski-dna"],
+      "default_goal": "show-snow-experience",
+      "timeline_bias": "action-and-landscape"
+    },
+    {
+      "id": "trekking",
+      "label_ko": "트래킹",
+      "label_en": "Trekking",
+      "description": "하이킹, 둘레길, 산악 트레킹, 자연 걷기 영상",
+      "default_genres": ["trekking-film", "travel-film", "slow-travel"],
+      "preferred_dna": ["adventure-dna", "travel-dna"],
+      "default_goal": "make-route-feel-walkable",
+      "timeline_bias": "journey-led"
+    },
+    {
+      "id": "avalanche-safety",
+      "label_ko": "AST / 눈사태 안전 교육",
+      "label_en": "AST / Avalanche Safety",
+      "description": "눈사태 안전, AST, 사면 판단, 구조, 위험 인식 교육 영상",
+      "default_genres": ["education", "safety-training", "field-instruction"],
+      "preferred_dna": ["education-dna", "safety-dna", "avalanche-dna"],
+      "default_goal": "teach-risk-awareness",
+      "timeline_bias": "explain-then-demonstrate"
+    },
+    {
+      "id": "wfr",
+      "label_ko": "WFR / 아웃도어 응급처치",
+      "label_en": "WFR / Wilderness First Responder",
+      "description": "WFR, 야생 응급처치, 환자평가, 구조 시나리오 교육 영상",
+      "default_genres": ["education", "medical-training", "scenario-training"],
+      "preferred_dna": ["education-dna", "medical-dna", "rescue-dna"],
+      "default_goal": "teach-procedure-and-judgment",
+      "timeline_bias": "procedure-led"
+    },
+    {
+      "id": "travel-promotion",
+      "label_ko": "여행상품 홍보",
+      "label_en": "Travel Promotion",
+      "description": "여행상품, 랜딩 영상, 관광 홍보, 고객 전환 목적 영상",
+      "default_genres": ["promotion", "brand-film", "commercial"],
+      "preferred_dna": ["marketing-dna", "travel-dna"],
+      "default_goal": "convert-viewer-to-inquiry",
+      "timeline_bias": "hook-benefit-proof-offer"
+    },
+    {
+      "id": "shorts-reels",
+      "label_ko": "릴스 / 쇼츠",
+      "label_en": "Reels / Shorts",
+      "description": "짧은 세로형 영상, 후킹, 숏폼 바이럴 목적 영상",
+      "default_genres": ["short-form", "reels", "shorts"],
+      "preferred_dna": ["shorts-dna", "marketing-dna"],
+      "default_goal": "stop-scroll-fast",
+      "timeline_bias": "hook-first"
+    }
+  ]
+}
