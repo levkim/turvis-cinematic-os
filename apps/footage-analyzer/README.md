@@ -1,6 +1,6 @@
 # Footage Analyzer CLI
 
-Version: v0.4  
+Version: v0.5  
 Project: TURVIS Studio / Adventure Memory Engine
 
 ---
@@ -9,13 +9,13 @@ Project: TURVIS Studio / Adventure Memory Engine
 
 Footage Analyzer CLI is the first local-first executable tool for TURVIS Studio.
 
-It scans a local footage folder, extracts basic video metadata, extracts review keyframes, creates placeholder Adventure Memory records, prepares clips for later AI-assisted or human review, and searches reviewed footage memory.
+It scans a local footage folder, extracts basic video metadata, extracts review keyframes, creates placeholder Adventure Memory records, prepares clips for later AI-assisted or human review, searches reviewed footage memory, and creates Director handoff packages.
 
 This tool does not require paid AI API calls.
 
 ---
 
-## What v0.4 Does
+## What v0.5 Does
 
 - Scans a local folder for video files
 - Creates stable TURVIS clip IDs
@@ -27,10 +27,11 @@ This tool does not require paid AI API calls.
 - Marks clips as `needs_review: true`
 - Generates a review queue from clips needing visual review
 - Searches Adventure Memory by query, emotion, story, shot type, location, score, and hero flag
+- Creates a Director-ready footage handoff grouped by story purpose
 
 ---
 
-## What v0.4 Does Not Do Yet
+## What v0.5 Does Not Do Yet
 
 - It does not visually understand the clip by itself
 - It does not call any AI API
@@ -70,18 +71,6 @@ python apps/footage-analyzer/footage_analyzer.py \
   --keyframes assets/mangystau/day3/keyframes
 ```
 
-Skip keyframe extraction:
-
-```bash
-python apps/footage-analyzer/footage_analyzer.py \
-  --input "D:/Mangystau/Day3" \
-  --project mangystau \
-  --episode day3 \
-  --prefix MG-D3 \
-  --output knowledge/footage/mangystau/day3 \
-  --skip-keyframes
-```
-
 ---
 
 ## Step 2 — Generate Review Queue
@@ -89,20 +78,6 @@ python apps/footage-analyzer/footage_analyzer.py \
 ```bash
 python apps/footage-analyzer/review_queue.py \
   --memory knowledge/footage/mangystau/day3
-```
-
-This creates:
-
-```text
-knowledge/footage/mangystau/day3/review-queue.md
-```
-
-To include clips already marked as reviewed:
-
-```bash
-python apps/footage-analyzer/review_queue.py \
-  --memory knowledge/footage/mangystau/day3 \
-  --include-reviewed
 ```
 
 ---
@@ -128,22 +103,33 @@ python apps/footage-analyzer/footage_search.py \
   --min-score 75
 ```
 
-Search for hero shots only:
+---
+
+## Step 4 — Create Director Handoff
+
+Create a Director-ready candidate pool grouped by story purpose:
 
 ```bash
-python apps/footage-analyzer/footage_search.py \
+python apps/footage-analyzer/director_handoff.py \
   --memory knowledge/footage/mangystau/day3 \
-  --hero-only \
+  --project "Mangystau Day 3" \
+  --min-score 70 \
   --exclude-avoid
 ```
 
-Write search results to Markdown:
+This creates:
+
+```text
+knowledge/footage/mangystau/day3/director-handoff.md
+```
+
+Include clips still marked as `needs_review` when testing early:
 
 ```bash
-python apps/footage-analyzer/footage_search.py \
+python apps/footage-analyzer/director_handoff.py \
   --memory knowledge/footage/mangystau/day3 \
-  --query "golden hour desert" \
-  --output knowledge/footage/mangystau/day3/search-results.md
+  --project "Mangystau Day 3" \
+  --include-review
 ```
 
 ---
@@ -158,7 +144,8 @@ knowledge/footage/mangystau/day3/
 ├── MG-D3-0002.json
 ├── batch-summary.md
 ├── review-queue.md
-└── search-results.md
+├── search-results.md
+└── director-handoff.md
 
 assets/mangystau/day3/keyframes/
 ├── MG-D3-0001/
@@ -180,7 +167,8 @@ assets/mangystau/day3/keyframes/
 5. Update each `.md` and `.json` memory file with visual analysis.
 6. Set `needs_review` to false only when confident.
 7. Use `footage_search.py` to find clips by emotion, story, and cinematic purpose.
-8. Director can then build storyboard and timeline from Adventure Memory.
+8. Use `director_handoff.py` to create a candidate pool for the Documentary Director.
+9. Director builds storyboard and timeline from Adventure Memory.
 
 ---
 
