@@ -1,6 +1,6 @@
 # Footage Analyzer CLI
 
-Version: v0.6  
+Version: v0.7  
 Project: TURVIS Studio / Adventure Memory Engine
 
 ---
@@ -9,7 +9,7 @@ Project: TURVIS Studio / Adventure Memory Engine
 
 Footage Analyzer CLI is the first local-first executable tool for TURVIS Studio.
 
-It scans a local footage folder, extracts basic video metadata, extracts review keyframes, creates placeholder Adventure Memory records, prepares clips for later AI-assisted or human review, searches reviewed footage memory, and creates Director handoff packages.
+It scans a local footage folder, extracts basic video metadata, extracts review keyframes, creates placeholder Adventure Memory records, prepares clips for later AI-assisted or human review, searches reviewed footage memory, validates project configuration, and creates Director handoff packages.
 
 This tool does not require paid AI API calls.
 
@@ -35,9 +35,10 @@ projects/current/project.yaml
 
 ---
 
-## What v0.6 Does
+## What v0.7 Does
 
 - Reads project configuration from `project.yaml`
+- Validates required project configuration before execution
 - Scans a local folder for video files
 - Creates stable TURVIS clip IDs
 - Extracts basic metadata with `ffprobe` if available
@@ -93,7 +94,24 @@ paths:
 
 ---
 
-## Step 1 — Analyze Footage From Project Folder
+## Step 1 — Validate Project
+
+```bash
+python apps/common/validate_project.py \
+  --project-folder projects/current
+```
+
+Strict path checking:
+
+```bash
+python apps/common/validate_project.py \
+  --project-folder projects/current \
+  --strict-paths
+```
+
+---
+
+## Step 2 — Analyze Footage From Project Folder
 
 Preferred universal command:
 
@@ -120,7 +138,7 @@ python apps/footage-analyzer/analyze_project.py \
 
 ---
 
-## Step 2 — Generate Review Queue
+## Step 3 — Generate Review Queue
 
 ```bash
 python apps/footage-analyzer/review_queue.py \
@@ -129,7 +147,7 @@ python apps/footage-analyzer/review_queue.py \
 
 ---
 
-## Step 3 — Search Adventure Memory
+## Step 4 — Search Adventure Memory
 
 Search by emotion:
 
@@ -152,7 +170,7 @@ python apps/footage-analyzer/footage_search.py \
 
 ---
 
-## Step 4 — Create Director Handoff From Project Folder
+## Step 5 — Create Director Handoff From Project Folder
 
 Preferred universal command:
 
@@ -177,22 +195,22 @@ python apps/footage-analyzer/handoff_project.py \
 
 ```text
 knowledge/footage/current/
-├── EXP-001-0001.md
-├── EXP-001-0001.json
-├── EXP-001-0002.md
-├── EXP-001-0002.json
+├── TV-CP-0001.md
+├── TV-CP-0001.json
+├── TV-CP-0002.md
+├── TV-CP-0002.json
 ├── batch-summary.md
 ├── review-queue.md
 ├── search-results.md
 └── director-handoff.md
 
 assets/current/keyframes/
-├── EXP-001-0001/
-│   ├── EXP-001-0001_05.jpg
-│   ├── EXP-001-0001_25.jpg
-│   ├── EXP-001-0001_50.jpg
-│   ├── EXP-001-0001_75.jpg
-│   └── EXP-001-0001_95.jpg
+├── TV-CP-0001/
+│   ├── TV-CP-0001_05.jpg
+│   ├── TV-CP-0001_25.jpg
+│   ├── TV-CP-0001_50.jpg
+│   ├── TV-CP-0001_75.jpg
+│   └── TV-CP-0001_95.jpg
 ```
 
 ---
@@ -213,15 +231,16 @@ But the recommended workflow is project-folder based.
 ## Review Workflow
 
 1. Create or update `project.yaml`.
-2. Run `analyze_project.py`.
-3. Generate `review-queue.md`.
-4. Open generated keyframes.
-5. Use `prompts/keyframe-review-prompt-v0.1.md` with Cowork, Codex, ChatGPT, or manual review.
-6. Update each `.md` and `.json` memory file with visual analysis.
-7. Set `needs_review` to false only when confident.
-8. Use `footage_search.py` to find clips by emotion, story, and cinematic purpose.
-9. Use `handoff_project.py` to create a candidate pool for the Documentary Director.
-10. Director builds storyboard and timeline from Adventure Memory.
+2. Validate the project with `validate_project.py`.
+3. Run `analyze_project.py`.
+4. Generate `review-queue.md`.
+5. Open generated keyframes.
+6. Use `prompts/keyframe-review-prompt-v0.1.md` with Cowork, Codex, ChatGPT, or manual review.
+7. Update each `.md` and `.json` memory file with visual analysis.
+8. Set `needs_review` to false only when confident.
+9. Use `footage_search.py` to find clips by emotion, story, and cinematic purpose.
+10. Use `handoff_project.py` to create a candidate pool for the Documentary Director.
+11. Director builds storyboard and timeline from Adventure Memory.
 
 ---
 
