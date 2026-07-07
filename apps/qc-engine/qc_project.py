@@ -15,10 +15,21 @@ if str(REPO_ROOT) not in sys.path:
 
 from apps.common.project_config import get_nested, load_project_config  # noqa: E402
 
-REQUIRED_PROJECT_FILES = [
+FULL_REQUIRED_PROJECT_FILES = [
     "project.yaml",
     "narration.md",
     "director-prep.md",
+    "story-beats.md",
+    "storyboard.md",
+    "timeline-draft.json",
+    "timeline.remotion.json",
+]
+
+FAST_DRAFT_REQUIRED_PROJECT_FILES = [
+    "project.yaml",
+    "narration.md",
+    "director-decisions.md",
+    "director-decisions.json",
     "story-beats.md",
     "storyboard.md",
     "timeline-draft.json",
@@ -30,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run TURVIS project QC")
     parser.add_argument("--project-folder", required=True, help="Project folder containing project.yaml")
     parser.add_argument("--strict", action="store_true", help="Exit with error if warnings exist")
+    parser.add_argument("--fast-draft", action="store_true", help="Use narration-first fast draft required files")
     return parser.parse_args()
 
 
@@ -37,8 +49,9 @@ def add_result(results: list[dict[str, str]], level: str, item: str, message: st
     results.append({"level": level, "item": item, "message": message})
 
 
-def validate_required_files(project_folder: Path, results: list[dict[str, str]]) -> None:
-    for filename in REQUIRED_PROJECT_FILES:
+def validate_required_files(project_folder: Path, results: list[dict[str, str]], fast_draft: bool) -> None:
+    required_files = FAST_DRAFT_REQUIRED_PROJECT_FILES if fast_draft else FULL_REQUIRED_PROJECT_FILES
+    for filename in required_files:
         path = project_folder / filename
         if path.exists():
             add_result(results, "PASS", filename, "File exists")
@@ -56,7 +69,7 @@ def load_json(path: Path, results: list[dict[str, str]]) -> dict[str, Any] | Non
     return None
 
 
-def validate_remotion_timeline(project_folder: Path, config: dict[str, Any], results: list[dict[str, str]]) -> None:
+def validate_remotion_timeline(project_folder: Path, config: dict[str, Any], results: list[dict[str, str]], fast_draft: bool) -> None:
     path = project_folder / "timeline.remotion.json"
     data = load_json(path, results)
     if data is None:
@@ -95,7 +108,9 @@ def validate_remotion_timeline(project_folder: Path, config: dict[str, Any], res
         if not clip.get("subtitle"):
             add_result(results, "WARN", clip_id, "Subtitle is empty")
         if clip.get("src") in {None, "", "TBD"}:
-            add_result(results, "WARN", clip_id, "Footage source is placeholder")
+            level = "PASS" if fast_draft else "WARN"
+            message = "Placeholder footage accepted in fast draft" if fast_draft else "Footage source is placeholder"
+            add_result(results, level, clip_id, message)
         last_end = max(last_end, end)
 
     declared_duration = int(composition.get("durationInFrames", 0) or 0)
@@ -111,12 +126,14 @@ def validate_remotion_timeline(project_folder: Path, config: dict[str, Any], res
         add_result(results, "PASS", "audio", "Audio generation disabled as expected")
 
 
-def build_report(project_folder: Path, results: list[dict[str, str]]) -> str:
+def build_report(project_folder: Path, results: list[dict[str, str]], fast_draft: bool) -> str:
     passes = sum(1 for r in results if r["level"] == "PASS")
     warnings = sum(1 for r in results if r["level"] == "WARN")
     fails = sum(1 for r in results if r["level"] == "FAIL")
 
+    mode = "Fast Draft" if fast_draft else "Full Pipeline"
     content = "# TURVIS QC Report\n\n"
+    content += f"Mode: **{mode}**  \n"
     content += f"Project Folder: `{project_folder}`\n\n"
     content += "## Summary\n\n"
     content += f"- PASS: {passes}\n"
@@ -143,10 +160,10 @@ def main() -> None:
     config = load_project_config(project_folder=str(project_folder))
     results: list[dict[str, str]] = []
 
-    validate_required_files(project_folder, results)
-    validate_remotion_timeline(project_folder, config, results)
+    validate_required_files(project_folder, results, args.fast_draft)
+    validate_remotion_timeline(project_folder, config, results, args.fast_draft)
 
-    report = build_report(project_folder, results)
+    report = build_report(project_folder, results, args.fast_draft)
     output_path = project_folder / "qc-report.md"
     output_path.write_text(report, encoding="utf-8")
     print(f"QC report created: {output_path}")
