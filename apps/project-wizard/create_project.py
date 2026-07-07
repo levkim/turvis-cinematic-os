@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Wizard CLI v0.1
+TURVIS Project Wizard CLI v0.2
 
-Creates a new project folder with project.yaml and narration.md.
+Creates a new video project folder with project.yaml and narration.md.
 
 Local-first. No AI API calls.
 """
@@ -12,6 +12,16 @@ from __future__ import annotations
 import argparse
 import re
 from pathlib import Path
+
+VALID_CATEGORIES = [
+    "adventure",
+    "ski-travel",
+    "trekking",
+    "avalanche-safety",
+    "wfr",
+    "travel-promotion",
+    "shorts-reels",
+]
 
 
 def slugify(text: str) -> str:
@@ -29,10 +39,12 @@ def make_prefix(slug: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Create a TURVIS project folder")
+    parser = argparse.ArgumentParser(description="Create a TURVIS video project folder")
     parser.add_argument("--title", required=True, help="Project title")
     parser.add_argument("--id", default=None, help="Project ID / slug. Defaults to slugified title")
-    parser.add_argument("--type", default="documentary", help="Project type")
+    parser.add_argument("--category", default="adventure", choices=VALID_CATEGORIES, help="Video category")
+    parser.add_argument("--type", default="video", help="Project type")
+    parser.add_argument("--genre", default="auto", help="Video genre. Defaults to category auto selection")
     parser.add_argument("--country", default="unknown", help="Country")
     parser.add_argument("--region", default="unknown", help="Region")
     parser.add_argument("--destination", default="unknown", help="Destination")
@@ -62,6 +74,8 @@ def build_project_yaml(args: argparse.Namespace, project_id: str, project_dir: P
   title: {args.title}
   type: {args.type}
   status: draft
+  category: {args.category}
+  genre: {args.genre}
   clip_prefix: {prefix}
   episode: episode-01
 
@@ -73,13 +87,13 @@ output:
 
 style:
   references:
-    - Netflix Documentary
-    - BBC Earth
-    - National Geographic
+    - cinematic travel film
+    - premium educational video
+    - high-end adventure edit
   mood:
     - cinematic
-    - quiet
-    - immersive
+    - clear
+    - purposeful
 
 locations:
   country: {args.country}
@@ -114,29 +128,24 @@ Narration segment...
 """
 
 
-def build_readme(title: str, project_id: str) -> str:
+def build_readme(title: str, project_id: str, category: str) -> str:
     return f"""# {title}
 
-Project ID: `{project_id}`
+Project ID: `{project_id}`  
+Video Category: `{category}`
 
 ## Workflow
 
-Validate:
+Run full pipeline:
 
 ```bash
-python apps/common/validate_project.py --project-folder projects/{project_id}
+python apps/turvis-studio/turvis.py pipeline --project-folder projects/{project_id} --include-review
 ```
 
-Analyze footage:
+Preview:
 
 ```bash
-python apps/footage-analyzer/analyze_project.py --project-folder projects/{project_id}
-```
-
-Create Director handoff:
-
-```bash
-python apps/footage-analyzer/handoff_project.py --project-folder projects/{project_id} --include-review
+python apps/turvis-studio/turvis.py preview
 ```
 """
 
@@ -148,13 +157,14 @@ def main() -> None:
 
     project_yaml = build_project_yaml(args, project_id, project_dir)
     narration_md = build_narration_md(args.title)
-    readme_md = build_readme(args.title, project_id)
+    readme_md = build_readme(args.title, project_id, args.category)
 
     write_file(project_dir / "project.yaml", project_yaml, args.force)
     write_file(project_dir / "narration.md", narration_md, args.force)
     write_file(project_dir / "README.md", readme_md, args.force)
 
     print(f"Project created: {project_dir}")
+    print(f"Category: {args.category}")
     print(f"Next: edit {project_dir / 'project.yaml'}")
 
 
