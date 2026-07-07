@@ -109,10 +109,7 @@ def fast_draft_command(project_folder: str, strict_qc: bool = False) -> list[str
         "apps/project-pipeline/run_pipeline.py",
         "--project-folder",
         project_folder,
-        "--skip-analyze",
-        "--skip-review-queue",
-        "--skip-handoff",
-        "--skip-director-prep",
+        "--fast-draft",
     ]
     if strict_qc:
         command.append("--strict-qc")
