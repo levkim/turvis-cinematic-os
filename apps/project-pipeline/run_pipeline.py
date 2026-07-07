@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Pipeline CLI v0.2
+TURVIS Project Pipeline CLI v0.3
 
 Runs a local-first project pipeline:
-validate -> analyze -> review queue -> director handoff -> director prep
+validate -> analyze -> review queue -> director handoff -> director prep -> storyboard draft
 
-Local-first. No AI API calls.
+Local-first. No API calls.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-review-queue", action="store_true", help="Skip review queue generation")
     parser.add_argument("--skip-handoff", action="store_true", help="Skip Director handoff generation")
     parser.add_argument("--skip-director-prep", action="store_true", help="Skip Director prep package generation")
+    parser.add_argument("--skip-storyboard", action="store_true", help="Skip story beat/storyboard draft generation")
     parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction during analysis")
     parser.add_argument("--include-review", action="store_true", help="Include needs_review clips in Director handoff")
     parser.add_argument("--exclude-avoid", action="store_true", help="Exclude avoid clips in Director handoff")
@@ -45,53 +46,24 @@ def main() -> None:
     project_folder = args.project_folder
 
     if not args.skip_validate:
-        run_step(
-            "Validate Project",
-            [
-                sys.executable,
-                "apps/common/validate_project.py",
-                "--project-folder",
-                project_folder,
-            ],
-        )
+        run_step("Validate Project", [sys.executable, "apps/common/validate_project.py", "--project-folder", project_folder])
 
     if not args.skip_analyze:
-        command = [
-            sys.executable,
-            "apps/footage-analyzer/analyze_project.py",
-            "--project-folder",
-            project_folder,
-        ]
+        command = [sys.executable, "apps/footage-analyzer/analyze_project.py", "--project-folder", project_folder]
         if args.skip_keyframes:
             command.append("--skip-keyframes")
         run_step("Analyze Footage", command)
 
     if not args.skip_review_queue:
         from apps.common.project_config import get_nested, load_project_config
-
         config = load_project_config(project_folder=project_folder)
         memory = get_nested(config, "paths.memory")
         if not memory:
             raise ValueError("Missing paths.memory in project.yaml")
-        run_step(
-            "Generate Review Queue",
-            [
-                sys.executable,
-                "apps/footage-analyzer/review_queue.py",
-                "--memory",
-                str(memory),
-            ],
-        )
+        run_step("Generate Review Queue", [sys.executable, "apps/footage-analyzer/review_queue.py", "--memory", str(memory)])
 
     if not args.skip_handoff:
-        command = [
-            sys.executable,
-            "apps/footage-analyzer/handoff_project.py",
-            "--project-folder",
-            project_folder,
-            "--min-score",
-            str(args.min_score),
-        ]
+        command = [sys.executable, "apps/footage-analyzer/handoff_project.py", "--project-folder", project_folder, "--min-score", str(args.min_score)]
         if args.include_review:
             command.append("--include-review")
         if args.exclude_avoid:
@@ -99,15 +71,10 @@ def main() -> None:
         run_step("Create Director Handoff", command)
 
     if not args.skip_director_prep:
-        run_step(
-            "Prepare Director Package",
-            [
-                sys.executable,
-                "apps/director-prep/prepare_director.py",
-                "--project-folder",
-                project_folder,
-            ],
-        )
+        run_step("Prepare Director Package", [sys.executable, "apps/director-prep/prepare_director.py", "--project-folder", project_folder])
+
+    if not args.skip_storyboard:
+        run_step("Create Storyboard Draft", [sys.executable, "apps/director-engine/create_storyboard.py", "--project-folder", project_folder])
 
     print("\nPipeline complete.")
 
