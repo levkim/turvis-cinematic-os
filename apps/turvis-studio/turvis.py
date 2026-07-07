@@ -22,10 +22,16 @@ def parse_args() -> argparse.Namespace:
 
     sub.add_parser("doctor", help="Check local system readiness")
 
-    create = sub.add_parser("create", help="Create a new project")
+    create = sub.add_parser("create", help="Create a new video project")
     create.add_argument("--title", required=True)
     create.add_argument("--id", default=None)
-    create.add_argument("--type", default="documentary")
+    create.add_argument(
+        "--category",
+        default="adventure",
+        choices=["adventure", "ski-travel", "trekking", "avalanche-safety", "wfr", "travel-promotion", "shorts-reels"],
+    )
+    create.add_argument("--type", default="video")
+    create.add_argument("--genre", default="auto")
     create.add_argument("--country", default="unknown")
     create.add_argument("--region", default="unknown")
     create.add_argument("--destination", default="unknown")
@@ -62,8 +68,12 @@ def main() -> None:
             "apps/project-wizard/create_project.py",
             "--title",
             args.title,
+            "--category",
+            args.category,
             "--type",
             args.type,
+            "--genre",
+            args.genre,
             "--country",
             args.country,
             "--region",
