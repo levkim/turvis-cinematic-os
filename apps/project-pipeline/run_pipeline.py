@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Pipeline CLI v0.6
+TURVIS Project Pipeline CLI v0.7
 
 Runs a local-first project pipeline:
-validate -> analyze -> review queue -> director handoff -> director prep -> storyboard -> timeline draft -> remotion bridge -> remotion sync
+validate -> analyze -> review queue -> director handoff -> director prep -> storyboard -> timeline draft -> remotion bridge -> remotion sync -> qc
 
 Local-first. No API calls.
 """
@@ -31,6 +31,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-timeline", action="store_true", help="Skip timeline draft generation")
     parser.add_argument("--skip-remotion-bridge", action="store_true", help="Skip Remotion timeline conversion")
     parser.add_argument("--skip-remotion-sync", action="store_true", help="Skip syncing Remotion timeline into app data")
+    parser.add_argument("--skip-qc", action="store_true", help="Skip project QC report generation")
+    parser.add_argument("--strict-qc", action="store_true", help="Fail pipeline when QC warnings exist")
     parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction during analysis")
     parser.add_argument("--include-review", action="store_true", help="Include needs_review clips in Director handoff")
     parser.add_argument("--exclude-avoid", action="store_true", help="Exclude avoid clips in Director handoff")
@@ -87,6 +89,12 @@ def main() -> None:
 
     if not args.skip_remotion_sync:
         run_step("Sync Remotion App Data", [sys.executable, "apps/remotion-sync/sync_timeline.py", "--project-folder", project_folder])
+
+    if not args.skip_qc:
+        command = [sys.executable, "apps/qc-engine/qc_project.py", "--project-folder", project_folder]
+        if args.strict_qc:
+            command.append("--strict")
+        run_step("Run QC", command)
 
     print("\nPipeline complete.")
 
