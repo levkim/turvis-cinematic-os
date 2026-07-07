@@ -1,10 +1,10 @@
 {
   "name": "turvis-remotion-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "start": "remotion studio src/Root.tsx",
-    "render:day3": "remotion render src/Root.tsx MangystauDay3 out/mangystau-day3.mp4",
+    "render": "remotion render src/Root.tsx TurvisDocumentary out/turvis-documentary.mp4",
     "preview": "remotion preview src/Root.tsx"
   },
   "dependencies": {
