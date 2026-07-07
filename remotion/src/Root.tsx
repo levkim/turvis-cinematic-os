@@ -1,18 +1,18 @@
 import React from 'react';
 import { Composition } from 'remotion';
 import { DocumentaryComposition } from './compositions/DocumentaryComposition';
-import { mangystauDay3Timeline } from './data/mangystau-day3.timeline';
+import { turvisTimeline } from './data/turvis.timeline';
 
 export const RemotionRoot: React.FC = () => {
   return (
     <Composition
-      id="MangystauDay3"
+      id="TurvisDocumentary"
       component={DocumentaryComposition}
-      durationInFrames={mangystauDay3Timeline.durationInFrames}
-      fps={mangystauDay3Timeline.fps}
-      width={mangystauDay3Timeline.width}
-      height={mangystauDay3Timeline.height}
-      defaultProps={{ timeline: mangystauDay3Timeline }}
+      durationInFrames={turvisTimeline.composition.durationInFrames}
+      fps={turvisTimeline.composition.fps}
+      width={turvisTimeline.composition.width}
+      height={turvisTimeline.composition.height}
+      defaultProps={{ timeline: turvisTimeline }}
     />
   );
 };
