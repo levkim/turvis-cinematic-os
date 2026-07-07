@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Pipeline CLI v0.8
+TURVIS Project Pipeline CLI v0.9
 
 Runs a local-first project pipeline:
-validate -> analyze -> review queue -> director handoff -> director prep -> director intelligence -> storyboard -> timeline draft -> remotion bridge -> remotion sync -> qc
+validate -> analyze -> review queue -> director handoff -> director prep -> director intelligence -> decision graph -> storyboard -> timeline draft -> remotion bridge -> remotion sync -> qc
 
 Local-first. No API calls.
 """
@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-handoff", action="store_true", help="Skip Director handoff generation")
     parser.add_argument("--skip-director-prep", action="store_true", help="Skip Director prep package generation")
     parser.add_argument("--skip-director-intelligence", action="store_true", help="Skip Director Intelligence decision generation")
+    parser.add_argument("--skip-decision-graph", action="store_true", help="Skip Director Decision Graph generation")
     parser.add_argument("--skip-storyboard", action="store_true", help="Skip story beat/storyboard draft generation")
     parser.add_argument("--skip-timeline", action="store_true", help="Skip timeline draft generation")
     parser.add_argument("--skip-remotion-bridge", action="store_true", help="Skip Remotion timeline conversion")
@@ -81,6 +82,9 @@ def main() -> None:
 
     if not args.skip_director_intelligence:
         run_step("Analyze Director Intelligence", [sys.executable, "apps/director-intelligence/analyze_narration.py", "--project-folder", project_folder])
+
+    if not args.skip_decision_graph:
+        run_step("Build Director Decision Graph", [sys.executable, "apps/director-intelligence/build_decision_graph.py", "--project-folder", project_folder])
 
     if not args.skip_storyboard:
         run_step("Create Storyboard Draft", [sys.executable, "apps/director-engine/create_storyboard.py", "--project-folder", project_folder])
