@@ -1,0 +1,23 @@
+{
+  "name": "turvis-remotion-engine",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio src/Root.tsx",
+    "render:day3": "remotion render src/Root.tsx MangystauDay3 out/mangystau-day3.mp4",
+    "preview": "remotion preview src/Root.tsx"
+  },
+  "dependencies": {
+    "@remotion/cli": "latest",
+    "@remotion/player": "latest",
+    "@remotion/renderer": "latest",
+    "remotion": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  }
+}
