@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Pipeline CLI v0.9
+TURVIS Project Pipeline CLI v1.0
 
-Runs a local-first project pipeline:
+Runs a local-first project pipeline.
+
+Full mode:
 validate -> analyze -> review queue -> director handoff -> director prep -> director intelligence -> decision graph -> storyboard -> timeline draft -> remotion bridge -> remotion sync -> qc
+
+Fast draft mode:
+validate -> director intelligence -> decision graph -> storyboard -> timeline draft -> remotion bridge -> remotion sync -> qc
 
 Local-first. No API calls.
 """
@@ -22,6 +27,7 @@ REPO_ROOT = CURRENT_FILE.parents[2]
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run TURVIS local project pipeline")
     parser.add_argument("--project-folder", required=True, help="Project folder containing project.yaml")
+    parser.add_argument("--fast-draft", action="store_true", help="Run narration-first draft without footage analysis")
     parser.add_argument("--skip-validate", action="store_true", help="Skip project validation")
     parser.add_argument("--skip-analyze", action="store_true", help="Skip footage analysis")
     parser.add_argument("--skip-review-queue", action="store_true", help="Skip review queue generation")
@@ -51,6 +57,12 @@ def run_step(name: str, command: list[str]) -> None:
 def main() -> None:
     args = parse_args()
     project_folder = args.project_folder
+
+    if args.fast_draft:
+        args.skip_analyze = True
+        args.skip_review_queue = True
+        args.skip_handoff = True
+        args.skip_director_prep = True
 
     if not args.skip_validate:
         run_step("Validate Project", [sys.executable, "apps/common/validate_project.py", "--project-folder", project_folder])
@@ -100,6 +112,8 @@ def main() -> None:
 
     if not args.skip_qc:
         command = [sys.executable, "apps/qc-engine/qc_project.py", "--project-folder", project_folder]
+        if args.fast_draft:
+            command.append("--fast-draft")
         if args.strict_qc:
             command.append("--strict")
         run_step("Run QC", command)
