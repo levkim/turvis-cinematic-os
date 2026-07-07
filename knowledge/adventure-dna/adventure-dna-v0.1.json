@@ -1,0 +1,101 @@
+{
+  "schema": "turvis.adventure_dna.v0.1",
+  "principles": [
+    {
+      "id": "DNA-001",
+      "name": "Arrival Is Earned",
+      "emotion": "awe",
+      "story_use": "arrival",
+      "visual_rule": "Reveal the destination only after the viewer feels the journey.",
+      "camera_preference": ["drone-reveal", "drone-wide", "slow-push"],
+      "pacing": "long-hold",
+      "subtitle_rule": "Delay subtitle. Let the image arrive first.",
+      "silence_rule": "Use silence before the first major reveal.",
+      "reasoning": "A true arrival scene must feel earned, not announced."
+    },
+    {
+      "id": "DNA-002",
+      "name": "Human Smallness",
+      "emotion": "isolation",
+      "story_use": "scale",
+      "visual_rule": "Show humans or vehicles as small marks inside vast terrain.",
+      "camera_preference": ["drone-wide", "human-scale", "static-wide"],
+      "pacing": "slow-hold",
+      "subtitle_rule": "Keep subtitle minimal and low on screen.",
+      "silence_rule": "Allow environmental silence to dominate.",
+      "reasoning": "Adventure becomes meaningful when the viewer feels human scale."
+    },
+    {
+      "id": "DNA-003",
+      "name": "Texture Before Explanation",
+      "emotion": "discovery",
+      "story_use": "texture",
+      "visual_rule": "Show geological or cultural texture before explaining it.",
+      "camera_preference": ["detail-texture", "slow-pan", "low-angle"],
+      "pacing": "measured",
+      "subtitle_rule": "Use concise descriptive subtitle after texture is visible.",
+      "silence_rule": "Short silence is enough; texture carries meaning.",
+      "reasoning": "The viewer should first see evidence, then receive explanation."
+    },
+    {
+      "id": "DNA-004",
+      "name": "Threshold Before Wilderness",
+      "emotion": "tension",
+      "story_use": "threshold",
+      "visual_rule": "Before entering emptiness, show the last sign of civilization.",
+      "camera_preference": ["vehicle-forward", "road-wide", "supply-detail"],
+      "pacing": "measured",
+      "subtitle_rule": "Subtitle can appear earlier to set context.",
+      "silence_rule": "Keep ambient movement; do not overdramatize.",
+      "reasoning": "A threshold creates contrast between known and unknown worlds."
+    },
+    {
+      "id": "DNA-005",
+      "name": "Cosmic Humility",
+      "emotion": "awe",
+      "story_use": "reflection",
+      "visual_rule": "Night sky or vast darkness should make the viewer feel small, not entertained.",
+      "camera_preference": ["night-sky", "static-wide", "slow-tilt"],
+      "pacing": "long-hold",
+      "subtitle_rule": "Use very few words, delayed.",
+      "silence_rule": "High silence. Avoid unnecessary motion.",
+      "reasoning": "The strongest adventure ending often comes from humility."
+    },
+    {
+      "id": "DNA-006",
+      "name": "Do Not Explain Too Early",
+      "emotion": "mystery",
+      "story_use": "discovery",
+      "visual_rule": "Let the viewer wonder before giving the answer.",
+      "camera_preference": ["partial-reveal", "slow-push", "oblique-wide"],
+      "pacing": "slow-hold",
+      "subtitle_rule": "Delay factual subtitle until curiosity forms.",
+      "silence_rule": "Medium silence before explanation.",
+      "reasoning": "Curiosity is stronger than immediate information."
+    },
+    {
+      "id": "DNA-007",
+      "name": "Journey Needs Direction",
+      "emotion": "movement",
+      "story_use": "journey",
+      "visual_rule": "Movement shots must show direction, not random motion.",
+      "camera_preference": ["vehicle-forward", "drone-follow", "road-leading-line"],
+      "pacing": "flowing",
+      "subtitle_rule": "Subtitle should not block motion lines.",
+      "silence_rule": "Low silence; movement carries rhythm.",
+      "reasoning": "The viewer should feel progress through space."
+    },
+    {
+      "id": "DNA-008",
+      "name": "Landscape Is Character",
+      "emotion": "awe",
+      "story_use": "establishing",
+      "visual_rule": "Treat extreme landscape as a character with presence and timing.",
+      "camera_preference": ["drone-wide", "static-wide", "slow-push"],
+      "pacing": "long-hold",
+      "subtitle_rule": "Do not cover the visual subject.",
+      "silence_rule": "Medium to high silence.",
+      "reasoning": "In adventure documentary, the place is not background; it is the main character."
+    }
+  ]
+}
