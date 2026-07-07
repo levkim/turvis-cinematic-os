@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Wizard CLI v0.2
+TURVIS Project Wizard CLI v0.3
 
-Creates a new video project folder with project.yaml and narration.md.
+Creates a new generic video project folder with project.yaml and narration.md.
 
 Local-first. No AI API calls.
 """
@@ -14,13 +14,16 @@ import re
 from pathlib import Path
 
 VALID_CATEGORIES = [
-    "adventure",
-    "ski-travel",
-    "trekking",
-    "avalanche-safety",
-    "wfr",
-    "travel-promotion",
+    "documentary",
+    "cinematic",
+    "promotion",
+    "education",
+    "youtube",
     "shorts-reels",
+    "corporate",
+    "interview",
+    "presentation",
+    "custom",
 ]
 
 
@@ -42,7 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create a TURVIS video project folder")
     parser.add_argument("--title", required=True, help="Project title")
     parser.add_argument("--id", default=None, help="Project ID / slug. Defaults to slugified title")
-    parser.add_argument("--category", default="adventure", choices=VALID_CATEGORIES, help="Video category")
+    parser.add_argument("--category", default="cinematic", choices=VALID_CATEGORIES, help="Generic video category")
     parser.add_argument("--type", default="video", help="Project type")
     parser.add_argument("--genre", default="auto", help="Video genre. Defaults to category auto selection")
     parser.add_argument("--country", default="unknown", help="Country")
@@ -87,9 +90,9 @@ output:
 
 style:
   references:
-    - cinematic travel film
-    - premium educational video
-    - high-end adventure edit
+    - premium video edit
+    - clean cinematic pacing
+    - broadcast-quality subtitle
   mood:
     - cinematic
     - clear
@@ -134,7 +137,7 @@ def build_readme(title: str, project_id: str, category: str) -> str:
 Project ID: `{project_id}`  
 Video Category: `{category}`
 
-## Workflow
+## Fast Workflow
 
 Run full pipeline:
 
@@ -165,7 +168,7 @@ def main() -> None:
 
     print(f"Project created: {project_dir}")
     print(f"Category: {args.category}")
-    print(f"Next: edit {project_dir / 'project.yaml'}")
+    print(f"Next: paste narration and run pipeline")
 
 
 if __name__ == "__main__":
