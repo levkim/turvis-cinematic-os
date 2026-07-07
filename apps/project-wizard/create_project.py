@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Wizard CLI v0.3
+TURVIS Project Wizard CLI v0.4
 
 Creates a new generic video project folder with project.yaml and narration.md.
 
@@ -137,18 +137,32 @@ def build_readme(title: str, project_id: str, category: str) -> str:
 Project ID: `{project_id}`  
 Video Category: `{category}`
 
-## Fast Workflow
+## Fast Draft First
 
-Run full pipeline:
+1. Paste narration here:
 
-```bash
-python apps/turvis-studio/turvis.py pipeline --project-folder projects/{project_id} --include-review
+```text
+projects/{project_id}/narration.md
 ```
 
-Preview:
+2. Generate storyboard, timeline, Remotion data, and QC without footage analysis:
+
+```bash
+python apps/turvis-studio/turvis.py fast-draft --project-folder projects/{project_id}
+```
+
+3. Preview:
 
 ```bash
 python apps/turvis-studio/turvis.py preview
+```
+
+## Full Footage Pipeline Later
+
+After footage is ready:
+
+```bash
+python apps/turvis-studio/turvis.py pipeline --project-folder projects/{project_id} --include-review
 ```
 """
 
@@ -168,7 +182,9 @@ def main() -> None:
 
     print(f"Project created: {project_dir}")
     print(f"Category: {args.category}")
-    print(f"Next: paste narration and run pipeline")
+    print(f"1) Paste narration: {project_dir / 'narration.md'}")
+    print(f"2) Fast draft: python apps/turvis-studio/turvis.py fast-draft --project-folder {project_dir}")
+    print("3) Preview: python apps/turvis-studio/turvis.py preview")
 
 
 if __name__ == "__main__":
