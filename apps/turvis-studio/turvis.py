@@ -46,14 +46,17 @@ def parse_args() -> argparse.Namespace:
     create.add_argument("--duration", type=int, default=240)
     create.add_argument("--aspect", default="16:9")
 
-    quickstart = sub.add_parser("quickstart", help="Create project and run pipeline immediately")
+    quickstart = sub.add_parser("quickstart", help="Create project and run full footage pipeline immediately")
     quickstart.add_argument("--title", required=True)
     quickstart.add_argument("--id", required=True)
     quickstart.add_argument("--category", default="cinematic", choices=GENERIC_CATEGORIES)
     quickstart.add_argument("--duration", type=int, default=240)
     quickstart.add_argument("--aspect", default="16:9")
-    quickstart.add_argument("--include-review", action="store_true", default=True)
     quickstart.add_argument("--skip-keyframes", action="store_true")
+
+    fast_draft = sub.add_parser("fast-draft", help="Create narration-first storyboard/timeline/Remotion draft without footage analysis")
+    fast_draft.add_argument("--project-folder", required=True)
+    fast_draft.add_argument("--strict-qc", action="store_true")
 
     pipeline = sub.add_parser("pipeline", help="Run project pipeline")
     pipeline.add_argument("--project-folder", required=True)
@@ -100,6 +103,22 @@ def create_project_command(args: argparse.Namespace) -> list[str]:
     return command
 
 
+def fast_draft_command(project_folder: str, strict_qc: bool = False) -> list[str]:
+    command = [
+        sys.executable,
+        "apps/project-pipeline/run_pipeline.py",
+        "--project-folder",
+        project_folder,
+        "--skip-analyze",
+        "--skip-review-queue",
+        "--skip-handoff",
+        "--skip-director-prep",
+    ]
+    if strict_qc:
+        command.append("--strict-qc")
+    return command
+
+
 def main() -> None:
     args = parse_args()
 
@@ -118,6 +137,10 @@ def main() -> None:
         if args.skip_keyframes:
             command.append("--skip-keyframes")
         run(command)
+        return
+
+    if args.command == "fast-draft":
+        run(fast_draft_command(args.project_folder, args.strict_qc))
         return
 
     if args.command == "pipeline":
