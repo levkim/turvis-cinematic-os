@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Pipeline CLI v0.3
+TURVIS Project Pipeline CLI v0.4
 
 Runs a local-first project pipeline:
-validate -> analyze -> review queue -> director handoff -> director prep -> storyboard draft
+validate -> analyze -> review queue -> director handoff -> director prep -> storyboard -> timeline draft
 
 Local-first. No API calls.
 """
@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-handoff", action="store_true", help="Skip Director handoff generation")
     parser.add_argument("--skip-director-prep", action="store_true", help="Skip Director prep package generation")
     parser.add_argument("--skip-storyboard", action="store_true", help="Skip story beat/storyboard draft generation")
+    parser.add_argument("--skip-timeline", action="store_true", help="Skip timeline draft generation")
     parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction during analysis")
     parser.add_argument("--include-review", action="store_true", help="Include needs_review clips in Director handoff")
     parser.add_argument("--exclude-avoid", action="store_true", help="Exclude avoid clips in Director handoff")
@@ -75,6 +76,9 @@ def main() -> None:
 
     if not args.skip_storyboard:
         run_step("Create Storyboard Draft", [sys.executable, "apps/director-engine/create_storyboard.py", "--project-folder", project_folder])
+
+    if not args.skip_timeline:
+        run_step("Build Timeline Draft", [sys.executable, "apps/timeline-builder/build_timeline.py", "--project-folder", project_folder])
 
     print("\nPipeline complete.")
 
