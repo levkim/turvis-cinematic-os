@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-TURVIS Footage Analyzer CLI v0.1
+TURVIS Footage Analyzer CLI v0.2
 
 Local-first footage scanner for Adventure Memory Engine.
 
 This tool does not call any AI API.
-It creates initial Markdown and JSON memory records for later AI/human review.
+It creates initial Markdown and JSON memory records and extracts keyframes for later AI/human review.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm"}
+KEYFRAME_RATIOS = [0.05, 0.25, 0.50, 0.75, 0.95]
 
 
 @dataclass
@@ -27,6 +28,12 @@ class VideoMetadata:
     height: Optional[int] = None
     fps: Optional[float] = None
     codec: Optional[str] = None
+
+
+@dataclass
+class KeyframeSet:
+    folder: str
+    frames: list[str]
 
 
 @dataclass
@@ -44,6 +51,7 @@ class ClipMemory:
     scores: dict[str, int]
     flags: dict[str, bool]
     technical_metadata: dict[str, Any]
+    keyframes: dict[str, Any]
     director_notes: str
 
 
@@ -57,6 +65,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--country", default="unknown", help="Country name")
     parser.add_argument("--region", default="unknown", help="Region name")
     parser.add_argument("--destination", default="unknown", help="Destination or route name")
+    parser.add_argument("--keyframes", default=None, help="Output folder for extracted keyframes")
+    parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction")
     return parser.parse_args()
 
 
@@ -115,6 +125,44 @@ def run_ffprobe(video_path: Path) -> VideoMetadata:
     )
 
 
+def extract_keyframes(video_path: Path, clip_id: str, metadata: VideoMetadata, keyframes_root: Path) -> KeyframeSet:
+    clip_keyframe_dir = keyframes_root / clip_id
+    clip_keyframe_dir.mkdir(parents=True, exist_ok=True)
+
+    frames: list[str] = []
+    duration = metadata.duration_seconds
+
+    if not duration or duration <= 0:
+        return KeyframeSet(folder=str(clip_keyframe_dir), frames=[])
+
+    for ratio in KEYFRAME_RATIOS:
+        timestamp = max(0.0, duration * ratio)
+        label = int(ratio * 100)
+        frame_path = clip_keyframe_dir / f"{clip_id}_{label:02d}.jpg"
+
+        command = [
+            "ffmpeg",
+            "-y",
+            "-ss",
+            f"{timestamp:.3f}",
+            "-i",
+            str(video_path),
+            "-frames:v",
+            "1",
+            "-q:v",
+            "2",
+            str(frame_path),
+        ]
+
+        try:
+            subprocess.run(command, capture_output=True, text=True, check=True)
+            frames.append(str(frame_path))
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            continue
+
+    return KeyframeSet(folder=str(clip_keyframe_dir), frames=frames)
+
+
 def make_clip_id(prefix: str, index: int) -> str:
     return f"{prefix}-{index:04d}"
 
@@ -129,6 +177,7 @@ def create_initial_memory(
     region: str,
     destination: str,
     metadata: VideoMetadata,
+    keyframes: KeyframeSet,
 ) -> ClipMemory:
     relative_asset_path = file_path.relative_to(input_dir).as_posix()
 
@@ -181,7 +230,8 @@ def create_initial_memory(
             "needs_review": True,
         },
         technical_metadata=asdict(metadata),
-        director_notes="Initial local scan only. Requires AI or human visual review.",
+        keyframes=asdict(keyframes),
+        director_notes="Initial local scan only. Requires AI or human visual review using extracted keyframes.",
     )
 
 
@@ -191,6 +241,9 @@ def write_json(memory: ClipMemory, output_path: Path) -> None:
 
 def write_markdown(memory: ClipMemory, output_path: Path) -> None:
     tech = memory.technical_metadata
+    keyframes = memory.keyframes
+    keyframe_lines = "\n".join([f"- `{frame}`" for frame in keyframes.get("frames", [])]) or "- No keyframes extracted"
+
     content = f"""# {memory.clip_id}
 
 ## Clip Identity
@@ -198,7 +251,7 @@ def write_markdown(memory: ClipMemory, output_path: Path) -> None:
 **Clip ID:** {memory.clip_id}  
 **Original Filename:** {memory.original_filename}  
 **Asset Path:** `{memory.asset_path}`  
-**Analyst:** Footage Analyzer CLI v0.1
+**Analyst:** Footage Analyzer CLI v0.2
 
 ---
 
@@ -225,10 +278,18 @@ def write_markdown(memory: ClipMemory, output_path: Path) -> None:
 
 ---
 
+## Keyframes
+
+**Folder:** `{keyframes.get('folder')}`
+
+{keyframe_lines}
+
+---
+
 ## Visual Description
 
 ```text
-Needs visual analysis.
+Needs visual analysis using keyframes.
 ```
 
 ---
@@ -286,7 +347,7 @@ Needs visual analysis.
 
 ## Director Notes
 
-Initial local scan only. Requires AI or human visual review.
+Initial local scan only. Requires AI or human visual review using extracted keyframes.
 """
     output_path.write_text(content, encoding="utf-8")
 
@@ -294,6 +355,7 @@ Initial local scan only. Requires AI or human visual review.
 def write_batch_summary(memories: list[ClipMemory], output_dir: Path) -> None:
     total = len(memories)
     needs_review = sum(1 for m in memories if m.flags.get("needs_review"))
+    keyframe_count = sum(len(m.keyframes.get("frames", [])) for m in memories)
 
     content = f"""# Footage Batch Summary
 
@@ -302,6 +364,7 @@ def write_batch_summary(memories: list[ClipMemory], output_dir: Path) -> None:
 | Category | Count |
 |---|---:|
 | Total clips analyzed | {total} |
+| Keyframes extracted | {keyframe_count} |
 | Hero shots | 0 |
 | Strong support shots | 0 |
 | Needs review | {needs_review} |
@@ -311,9 +374,9 @@ def write_batch_summary(memories: list[ClipMemory], output_dir: Path) -> None:
 
 ## Notes
 
-This batch was generated by Footage Analyzer CLI v0.1.
+This batch was generated by Footage Analyzer CLI v0.2.
 
-The files were scanned locally and technical metadata was extracted where possible.
+The files were scanned locally, technical metadata was extracted where possible, and keyframes were generated for review.
 Visual interpretation still requires AI-assisted or human review.
 
 ---
@@ -322,7 +385,8 @@ Visual interpretation still requires AI-assisted or human review.
 
 """
     for memory in memories:
-        content += f"- `{memory.clip_id}` — {memory.original_filename}\n"
+        frames = len(memory.keyframes.get("frames", []))
+        content += f"- `{memory.clip_id}` — {memory.original_filename} — keyframes: {frames}\n"
 
     (output_dir / "batch-summary.md").write_text(content, encoding="utf-8")
 
@@ -332,6 +396,14 @@ def main() -> None:
     input_dir = Path(args.input).expanduser().resolve()
     output_dir = Path(args.output).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    keyframes_root = (
+        Path(args.keyframes).expanduser().resolve()
+        if args.keyframes
+        else output_dir / "keyframes"
+    )
+    if not args.skip_keyframes:
+        keyframes_root.mkdir(parents=True, exist_ok=True)
 
     video_files = find_video_files(input_dir)
     if not video_files:
@@ -343,6 +415,11 @@ def main() -> None:
     for index, video_path in enumerate(video_files, start=1):
         clip_id = make_clip_id(args.prefix, index)
         metadata = run_ffprobe(video_path)
+        keyframes = (
+            KeyframeSet(folder="", frames=[])
+            if args.skip_keyframes
+            else extract_keyframes(video_path, clip_id, metadata, keyframes_root)
+        )
         memory = create_initial_memory(
             clip_id=clip_id,
             file_path=video_path,
@@ -353,12 +430,13 @@ def main() -> None:
             region=args.region,
             destination=args.destination,
             metadata=metadata,
+            keyframes=keyframes,
         )
 
         write_markdown(memory, output_dir / f"{clip_id}.md")
         write_json(memory, output_dir / f"{clip_id}.json")
         memories.append(memory)
-        print(f"Created memory: {clip_id} — {video_path.name}")
+        print(f"Created memory: {clip_id} — {video_path.name} — keyframes: {len(keyframes.frames)}")
 
     write_batch_summary(memories, output_dir)
     print(f"\nDone. Created {len(memories)} clip memories in {output_dir}")
