@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-TURVIS Project Pipeline CLI v0.5
+TURVIS Project Pipeline CLI v0.6
 
 Runs a local-first project pipeline:
-validate -> analyze -> review queue -> director handoff -> director prep -> storyboard -> timeline draft -> remotion bridge
+validate -> analyze -> review queue -> director handoff -> director prep -> storyboard -> timeline draft -> remotion bridge -> remotion sync
 
 Local-first. No API calls.
 """
@@ -30,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-storyboard", action="store_true", help="Skip story beat/storyboard draft generation")
     parser.add_argument("--skip-timeline", action="store_true", help="Skip timeline draft generation")
     parser.add_argument("--skip-remotion-bridge", action="store_true", help="Skip Remotion timeline conversion")
+    parser.add_argument("--skip-remotion-sync", action="store_true", help="Skip syncing Remotion timeline into app data")
     parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction during analysis")
     parser.add_argument("--include-review", action="store_true", help="Include needs_review clips in Director handoff")
     parser.add_argument("--exclude-avoid", action="store_true", help="Exclude avoid clips in Director handoff")
@@ -83,6 +84,9 @@ def main() -> None:
 
     if not args.skip_remotion_bridge:
         run_step("Build Remotion Timeline", [sys.executable, "apps/remotion-bridge/build_remotion_timeline.py", "--project-folder", project_folder])
+
+    if not args.skip_remotion_sync:
+        run_step("Sync Remotion App Data", [sys.executable, "apps/remotion-sync/sync_timeline.py", "--project-folder", project_folder])
 
     print("\nPipeline complete.")
 
