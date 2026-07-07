@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
-TURVIS Footage Analyzer CLI v0.2
+TURVIS Footage Analyzer CLI v0.3
 
 Local-first footage scanner for Adventure Memory Engine.
 
 This tool does not call any AI API.
 It creates initial Markdown and JSON memory records and extracts keyframes for later AI/human review.
+
+Architecture rule:
+Applications never know projects. Projects are data.
+Prefer --project-folder or --project-spec over hard-coded project arguments.
 """
 
 from __future__ import annotations
@@ -13,9 +17,17 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Optional
+
+# Allow running this file directly from repository root without installing a package.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from apps.common.project_config import get_nested, load_project_config  # noqa: E402
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm"}
 KEYFRAME_RATIOS = [0.05, 0.25, 0.50, 0.75, 0.95]
@@ -34,6 +46,21 @@ class VideoMetadata:
 class KeyframeSet:
     folder: str
     frames: list[str]
+
+
+@dataclass
+class AnalyzerSettings:
+    input_dir: Path
+    output_dir: Path
+    keyframes_root: Path
+    project_id: str
+    project_title: str
+    episode: str
+    prefix: str
+    country: str
+    region: str
+    destination: str
+    skip_keyframes: bool
 
 
 @dataclass
@@ -57,17 +84,71 @@ class ClipMemory:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="TURVIS Footage Analyzer CLI")
-    parser.add_argument("--input", required=True, help="Input folder containing video files")
-    parser.add_argument("--project", required=True, help="Project slug, e.g. mangystau")
-    parser.add_argument("--episode", required=True, help="Episode slug, e.g. day3")
-    parser.add_argument("--prefix", required=True, help="Clip ID prefix, e.g. MG-D3")
-    parser.add_argument("--output", required=True, help="Output folder for memory files")
-    parser.add_argument("--country", default="unknown", help="Country name")
-    parser.add_argument("--region", default="unknown", help="Region name")
-    parser.add_argument("--destination", default="unknown", help="Destination or route name")
+
+    # Preferred universal project inputs.
+    parser.add_argument("--project-folder", default=None, help="Project folder containing project.yaml")
+    parser.add_argument("--project-spec", default=None, help="Path to project.yaml")
+
+    # Backward-compatible direct inputs. These are still accepted, but project.yaml is preferred.
+    parser.add_argument("--input", default=None, help="Input folder containing video files")
+    parser.add_argument("--project", default=None, help="Project slug, e.g. mangystau")
+    parser.add_argument("--episode", default=None, help="Episode slug, e.g. day3")
+    parser.add_argument("--prefix", default=None, help="Clip ID prefix, e.g. MG-D3")
+    parser.add_argument("--output", default=None, help="Output folder for memory files")
+    parser.add_argument("--country", default=None, help="Country name")
+    parser.add_argument("--region", default=None, help="Region name")
+    parser.add_argument("--destination", default=None, help="Destination or route name")
     parser.add_argument("--keyframes", default=None, help="Output folder for extracted keyframes")
     parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction")
     return parser.parse_args()
+
+
+def slug_to_prefix(slug: str) -> str:
+    parts = [p for p in slug.replace("_", "-").split("-") if p]
+    if not parts:
+        return "TV"
+    return "-".join(part[:2].upper() for part in parts[:3])
+
+
+def resolve_settings(args: argparse.Namespace) -> AnalyzerSettings:
+    config: dict[str, Any] = {}
+    if args.project_folder or args.project_spec:
+        config = load_project_config(args.project_folder, args.project_spec)
+
+    project_id = args.project or get_nested(config, "project.id", "current-project")
+    project_title = get_nested(config, "project.title", project_id)
+    episode = args.episode or get_nested(config, "project.episode", get_nested(config, "project.id", "episode"))
+    prefix = args.prefix or get_nested(config, "project.clip_prefix", slug_to_prefix(str(project_id)))
+
+    input_value = args.input or get_nested(config, "paths.footage")
+    output_value = args.output or get_nested(config, "paths.memory")
+    keyframes_value = args.keyframes or get_nested(config, "paths.keyframes")
+
+    if not input_value:
+        raise ValueError("Missing footage input. Provide --input or paths.footage in project.yaml")
+    if not output_value:
+        raise ValueError("Missing memory output. Provide --output or paths.memory in project.yaml")
+
+    country = args.country or get_nested(config, "locations.country", "unknown")
+    region = args.region or get_nested(config, "locations.region", "unknown")
+    destination = args.destination or get_nested(config, "locations.destination", "unknown")
+
+    output_dir = Path(str(output_value)).expanduser().resolve()
+    keyframes_root = Path(str(keyframes_value)).expanduser().resolve() if keyframes_value else output_dir / "keyframes"
+
+    return AnalyzerSettings(
+        input_dir=Path(str(input_value)).expanduser().resolve(),
+        output_dir=output_dir,
+        keyframes_root=keyframes_root,
+        project_id=str(project_id),
+        project_title=str(project_title),
+        episode=str(episode),
+        prefix=str(prefix),
+        country=str(country),
+        region=str(region),
+        destination=str(destination),
+        skip_keyframes=bool(args.skip_keyframes),
+    )
 
 
 def find_video_files(input_dir: Path) -> list[Path]:
@@ -170,27 +251,23 @@ def make_clip_id(prefix: str, index: int) -> str:
 def create_initial_memory(
     clip_id: str,
     file_path: Path,
-    input_dir: Path,
-    project: str,
-    episode: str,
-    country: str,
-    region: str,
-    destination: str,
+    settings: AnalyzerSettings,
     metadata: VideoMetadata,
     keyframes: KeyframeSet,
 ) -> ClipMemory:
-    relative_asset_path = file_path.relative_to(input_dir).as_posix()
+    relative_asset_path = file_path.relative_to(settings.input_dir).as_posix()
 
     return ClipMemory(
         clip_id=clip_id,
         original_filename=file_path.name,
         asset_path=relative_asset_path,
         project={
-            "series": project,
-            "episode": episode,
-            "destination": destination,
-            "country": country,
-            "region": region,
+            "series": settings.project_id,
+            "title": settings.project_title,
+            "episode": settings.episode,
+            "destination": settings.destination,
+            "country": settings.country,
+            "region": settings.region,
         },
         location={
             "name": "unknown",
@@ -251,13 +328,14 @@ def write_markdown(memory: ClipMemory, output_path: Path) -> None:
 **Clip ID:** {memory.clip_id}  
 **Original Filename:** {memory.original_filename}  
 **Asset Path:** `{memory.asset_path}`  
-**Analyst:** Footage Analyzer CLI v0.2
+**Analyst:** Footage Analyzer CLI v0.3
 
 ---
 
 ## Project Context
 
 **Series:** {memory.project.get('series')}  
+**Title:** {memory.project.get('title')}  
 **Episode:** {memory.project.get('episode')}  
 **Country:** {memory.project.get('country')}  
 **Region:** {memory.project.get('region')}  
@@ -374,7 +452,7 @@ def write_batch_summary(memories: list[ClipMemory], output_dir: Path) -> None:
 
 ## Notes
 
-This batch was generated by Footage Analyzer CLI v0.2.
+This batch was generated by Footage Analyzer CLI v0.3.
 
 The files were scanned locally, technical metadata was extracted where possible, and keyframes were generated for review.
 Visual interpretation still requires AI-assisted or human review.
@@ -393,53 +471,42 @@ Visual interpretation still requires AI-assisted or human review.
 
 def main() -> None:
     args = parse_args()
-    input_dir = Path(args.input).expanduser().resolve()
-    output_dir = Path(args.output).expanduser().resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
+    settings = resolve_settings(args)
 
-    keyframes_root = (
-        Path(args.keyframes).expanduser().resolve()
-        if args.keyframes
-        else output_dir / "keyframes"
-    )
-    if not args.skip_keyframes:
-        keyframes_root.mkdir(parents=True, exist_ok=True)
+    settings.output_dir.mkdir(parents=True, exist_ok=True)
+    if not settings.skip_keyframes:
+        settings.keyframes_root.mkdir(parents=True, exist_ok=True)
 
-    video_files = find_video_files(input_dir)
+    video_files = find_video_files(settings.input_dir)
     if not video_files:
-        print(f"No video files found in {input_dir}")
+        print(f"No video files found in {settings.input_dir}")
         return
 
     memories: list[ClipMemory] = []
 
     for index, video_path in enumerate(video_files, start=1):
-        clip_id = make_clip_id(args.prefix, index)
+        clip_id = make_clip_id(settings.prefix, index)
         metadata = run_ffprobe(video_path)
         keyframes = (
             KeyframeSet(folder="", frames=[])
-            if args.skip_keyframes
-            else extract_keyframes(video_path, clip_id, metadata, keyframes_root)
+            if settings.skip_keyframes
+            else extract_keyframes(video_path, clip_id, metadata, settings.keyframes_root)
         )
         memory = create_initial_memory(
             clip_id=clip_id,
             file_path=video_path,
-            input_dir=input_dir,
-            project=args.project,
-            episode=args.episode,
-            country=args.country,
-            region=args.region,
-            destination=args.destination,
+            settings=settings,
             metadata=metadata,
             keyframes=keyframes,
         )
 
-        write_markdown(memory, output_dir / f"{clip_id}.md")
-        write_json(memory, output_dir / f"{clip_id}.json")
+        write_markdown(memory, settings.output_dir / f"{clip_id}.md")
+        write_json(memory, settings.output_dir / f"{clip_id}.json")
         memories.append(memory)
-        print(f"Created memory: {clip_id} — {video_path.name} — keyframes: {len(keyframes.frames)}")
+        print(f"Created memory: {clip_id} — {video_path.name}")
 
-    write_batch_summary(memories, output_dir)
-    print(f"\nDone. Created {len(memories)} clip memories in {output_dir}")
+    write_batch_summary(memories, settings.output_dir)
+    print(f"\nDone. Created {len(memories)} clip memories in {settings.output_dir}")
 
 
 if __name__ == "__main__":
