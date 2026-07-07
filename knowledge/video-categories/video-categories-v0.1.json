@@ -2,74 +2,104 @@
   "schema": "turvis.video_categories.v0.1",
   "categories": [
     {
-      "id": "adventure",
-      "label_ko": "어드벤쳐",
-      "label_en": "Adventure",
-      "description": "오지, 원정, 오버랜딩, 탐험형 여행 영상",
-      "default_genres": ["travel-film", "expedition-film", "cinematic-documentary"],
-      "preferred_dna": ["adventure-dna"],
-      "default_goal": "immerse-and-inspire",
-      "timeline_bias": "landscape-led"
+      "id": "documentary",
+      "label_ko": "다큐멘터리",
+      "label_en": "Documentary",
+      "description": "인물, 장소, 자연, 역사, 사건을 서사적으로 전달하는 영상",
+      "default_genres": ["documentary", "nature", "people", "culture", "adventure"],
+      "preferred_dna": ["documentary-dna", "adventure-dna"],
+      "default_goal": "immerse-and-explain",
+      "timeline_bias": "story-led"
     },
     {
-      "id": "ski-travel",
-      "label_ko": "스키여행",
-      "label_en": "Ski Travel",
-      "description": "스키장, 프리라이드, 백컨트리, 헬리스키, 파우더 여행 영상",
-      "default_genres": ["ski-film", "travel-film", "resort-promotion"],
-      "preferred_dna": ["adventure-dna", "ski-dna"],
-      "default_goal": "show-snow-experience",
-      "timeline_bias": "action-and-landscape"
+      "id": "cinematic",
+      "label_ko": "시네마틱",
+      "label_en": "Cinematic",
+      "description": "감성, 풍경, 분위기, 몰입감을 우선하는 고급 영상",
+      "default_genres": ["travel-film", "brand-film", "adventure-film", "lifestyle-film"],
+      "preferred_dna": ["cinematic-dna", "adventure-dna"],
+      "default_goal": "create-emotional-impact",
+      "timeline_bias": "visual-led"
     },
     {
-      "id": "trekking",
-      "label_ko": "트래킹",
-      "label_en": "Trekking",
-      "description": "하이킹, 둘레길, 산악 트레킹, 자연 걷기 영상",
-      "default_genres": ["trekking-film", "travel-film", "slow-travel"],
-      "preferred_dna": ["adventure-dna", "travel-dna"],
-      "default_goal": "make-route-feel-walkable",
-      "timeline_bias": "journey-led"
-    },
-    {
-      "id": "avalanche-safety",
-      "label_ko": "AST / 눈사태 안전 교육",
-      "label_en": "AST / Avalanche Safety",
-      "description": "눈사태 안전, AST, 사면 판단, 구조, 위험 인식 교육 영상",
-      "default_genres": ["education", "safety-training", "field-instruction"],
-      "preferred_dna": ["education-dna", "safety-dna", "avalanche-dna"],
-      "default_goal": "teach-risk-awareness",
-      "timeline_bias": "explain-then-demonstrate"
-    },
-    {
-      "id": "wfr",
-      "label_ko": "WFR / 아웃도어 응급처치",
-      "label_en": "WFR / Wilderness First Responder",
-      "description": "WFR, 야생 응급처치, 환자평가, 구조 시나리오 교육 영상",
-      "default_genres": ["education", "medical-training", "scenario-training"],
-      "preferred_dna": ["education-dna", "medical-dna", "rescue-dna"],
-      "default_goal": "teach-procedure-and-judgment",
-      "timeline_bias": "procedure-led"
-    },
-    {
-      "id": "travel-promotion",
-      "label_ko": "여행상품 홍보",
-      "label_en": "Travel Promotion",
-      "description": "여행상품, 랜딩 영상, 관광 홍보, 고객 전환 목적 영상",
-      "default_genres": ["promotion", "brand-film", "commercial"],
-      "preferred_dna": ["marketing-dna", "travel-dna"],
-      "default_goal": "convert-viewer-to-inquiry",
+      "id": "promotion",
+      "label_ko": "홍보 영상",
+      "label_en": "Promotion",
+      "description": "상품, 서비스, 여행, 브랜드, 장소를 홍보하는 영상",
+      "default_genres": ["promotion", "commercial", "brand-film", "travel-promotion"],
+      "preferred_dna": ["marketing-dna", "brand-dna"],
+      "default_goal": "convert-viewer-to-action",
       "timeline_bias": "hook-benefit-proof-offer"
     },
     {
+      "id": "education",
+      "label_ko": "교육 영상",
+      "label_en": "Education",
+      "description": "강의, 안전교육, 절차 설명, 현장 교육용 영상",
+      "default_genres": ["education", "training", "field-instruction", "lecture"],
+      "preferred_dna": ["education-dna", "safety-dna"],
+      "default_goal": "teach-clearly",
+      "timeline_bias": "explain-then-demonstrate"
+    },
+    {
+      "id": "youtube",
+      "label_ko": "유튜브",
+      "label_en": "YouTube",
+      "description": "유튜브 업로드용 일반 가로형 영상",
+      "default_genres": ["youtube", "episode", "review", "story"],
+      "preferred_dna": ["youtube-dna", "story-dna"],
+      "default_goal": "retain-viewer",
+      "timeline_bias": "hook-story-payoff"
+    },
+    {
       "id": "shorts-reels",
-      "label_ko": "릴스 / 쇼츠",
-      "label_en": "Reels / Shorts",
+      "label_ko": "쇼츠 / 릴스",
+      "label_en": "Shorts / Reels",
       "description": "짧은 세로형 영상, 후킹, 숏폼 바이럴 목적 영상",
-      "default_genres": ["short-form", "reels", "shorts"],
+      "default_genres": ["short-form", "reels", "shorts", "tiktok"],
       "preferred_dna": ["shorts-dna", "marketing-dna"],
       "default_goal": "stop-scroll-fast",
       "timeline_bias": "hook-first"
+    },
+    {
+      "id": "corporate",
+      "label_ko": "기업 / 기관 영상",
+      "label_en": "Corporate",
+      "description": "회사, 기관, 관광청, 지자체, 조직 PR 영상",
+      "default_genres": ["corporate", "institutional", "government", "brand-pr"],
+      "preferred_dna": ["corporate-dna", "brand-dna"],
+      "default_goal": "build-trust-and-authority",
+      "timeline_bias": "message-proof-credibility"
+    },
+    {
+      "id": "interview",
+      "label_ko": "인터뷰",
+      "label_en": "Interview",
+      "description": "인물 인터뷰, 전문가 설명, 증언 중심 영상",
+      "default_genres": ["interview", "expert-talk", "testimonial"],
+      "preferred_dna": ["interview-dna", "story-dna"],
+      "default_goal": "make-person-believable",
+      "timeline_bias": "voice-led"
+    },
+    {
+      "id": "presentation",
+      "label_ko": "프레젠테이션",
+      "label_en": "Presentation",
+      "description": "발표, 제안, 설명, 세일즈용 영상 프레젠테이션",
+      "default_genres": ["presentation", "pitch", "proposal", "briefing"],
+      "preferred_dna": ["presentation-dna", "education-dna"],
+      "default_goal": "explain-and-persuade",
+      "timeline_bias": "section-led"
+    },
+    {
+      "id": "custom",
+      "label_ko": "커스텀",
+      "label_en": "Custom",
+      "description": "정해진 분류에 맞추지 않고 사용자가 직접 목적과 스타일을 정의하는 영상",
+      "default_genres": ["custom"],
+      "preferred_dna": ["custom-dna"],
+      "default_goal": "user-defined",
+      "timeline_bias": "user-defined"
     }
   ]
 }
