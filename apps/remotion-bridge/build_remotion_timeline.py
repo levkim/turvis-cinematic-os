@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -25,8 +26,19 @@ def seconds_to_frames(seconds: int | float, fps: int) -> int:
     return int(round(float(seconds) * fps))
 
 
+def parse_resolution(resolution: str | None) -> tuple[int, int]:
+    if not resolution:
+        return 1920, 1080
+    match = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", str(resolution), re.IGNORECASE)
+    if not match:
+        return 1920, 1080
+    return int(match.group(1)), int(match.group(2))
+
+
 def build_remotion_timeline(config: dict, draft: dict) -> dict:
     fps = int(draft.get("output", {}).get("fps", 30))
+    resolution = get_nested(config, "output.resolution", "1920x1080")
+    width, height = parse_resolution(resolution)
     clips = []
 
     for item in draft.get("clips", []):
@@ -52,8 +64,10 @@ def build_remotion_timeline(config: dict, draft: dict) -> dict:
             "fps": fps,
             "durationInFrames": sum(c["durationInFrames"] for c in clips),
             "aspectRatio": get_nested(config, "output.aspect_ratio", "16:9"),
-            "resolution": get_nested(config, "output.resolution", "3840x2160"),
+            "resolution": resolution,
             "language": get_nested(config, "output.language", "ko"),
+            "width": width,
+            "height": height,
         },
         "audio": {
             "generateNarration": bool(get_nested(config, "rules.generate_audio", False)),

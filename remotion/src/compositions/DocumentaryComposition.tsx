@@ -9,8 +9,9 @@ interface DocumentaryCompositionProps {
   timeline: TurvisRemotionTimeline;
 }
 
-const isUsableVideoSource = (src: string): boolean => {
-  return Boolean(src && src !== 'TBD' && !src.toLowerCase().includes('candidate from'));
+const isUsableVideoSource = (clip: RemotionClip): boolean => {
+  const src = clip.src;
+  return clip.type === 'video' && Boolean(src && src !== 'TBD' && !src.toLowerCase().includes('candidate from'));
 };
 
 const PlaceholderLayer: React.FC<{ clip: RemotionClip }> = ({ clip }) => {
@@ -51,7 +52,7 @@ const ClipLayer: React.FC<{ clip: RemotionClip }> = ({ clip }) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: 'black' }}>
-      {isUsableVideoSource(clip.src) ? (
+      {isUsableVideoSource(clip) ? (
         <Video
           src={clip.src}
           startFrom={0}

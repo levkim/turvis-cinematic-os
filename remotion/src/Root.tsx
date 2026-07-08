@@ -1,5 +1,5 @@
 import React from 'react';
-import { Composition } from 'remotion';
+import { Composition, registerRoot } from 'remotion';
 import { DocumentaryComposition } from './compositions/DocumentaryComposition';
 import { turvisTimeline } from './data/turvis.timeline';
 
@@ -18,3 +18,5 @@ export const RemotionRoot: React.FC = () => {
 };
 
 export default RemotionRoot;
+
+registerRoot(RemotionRoot);

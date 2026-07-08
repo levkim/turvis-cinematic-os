@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def npm_executable(os_name: str | None = None) -> str:
+    platform_name = os.name if os_name is None else os_name
+    return "npm.cmd" if platform_name == "nt" else "npm"
+
+
 def run(command: list[str]) -> None:
     print(" ".join(command))
     subprocess.run(command, cwd=REMOTION_DIR, check=True)
@@ -31,13 +36,15 @@ def main() -> None:
     if not REMOTION_DIR.exists():
         raise FileNotFoundError(f"Remotion folder not found: {REMOTION_DIR}")
 
+    npm = npm_executable()
+
     if args.install:
-        run(["npm", "install"])
+        run([npm, "install"])
 
     if args.preview:
-        run(["npm", "run", "start"])
+        run([npm, "run", "start"])
     elif args.render:
-        run(["npm", "run", "render"])
+        run([npm, "run", "render"])
 
 
 if __name__ == "__main__":
