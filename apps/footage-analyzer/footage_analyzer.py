@@ -511,6 +511,65 @@ def build_footage_index(
     }
 
 
+
+SHOT_KEYWORDS: dict[str, list[str]] = {
+    '\uac00\ub294\uae38': ['\uac00\ub294\uae38', '\uc774\ub3d9', '\ud558\ubd80', '\uc0c1\ubd80\ub85c'],
+    '\uc1a1\uacf3\ub2c8': ['\uc1a1\uacf3\ub2c8', '\ucea0\ud504', '\ucea0\ud551'],
+    '\ucea0\ud551': ['\ucea0\ud504', '\ucea0\ud551', '\uc0c8\ubcbd'],
+    '\ud654\uc131': ['\ud654\uc131', '\ub9c8\ub974\uc2a4', '\ub300\uc9c0', '\ud68c\ubc31\uc0c9', '\uc9c0\uad6c'],
+    '\ub4dc\ub860': ['\ub4dc\ub860', '\uc0c1\uc2b9', '\uc804\uacbd', '\uc640\uc774\ub4dc', '\ud314\ub85c\uc6b0'],
+    '\ud30c\ub178\ub77c\ub9c8': ['\ud30c\ub178\ub77c\ub9c8', '\uc804\uacbd', '\uc640\uc774\ub4dc', '360'],
+    '\uc0ac\ub78c': ['\uc0ac\ub78c', '\uc778\ubb3c', '\uc2e4\ub8e8\uc5e3', '\ub4b7\ubaa8\uc2b5'],
+    '\ub4dc\ub798\uace4': ['\ub4dc\ub798\uace4', '\ud06c\ub808\uc2a4\ud2b8', '\ub2a5\uc120', '\uc6a9\uc758'],
+    '\ud68c\uc804': ['\ud68c\uc804', '360', '\ud30c\ub178\ub77c\ub9c8'],
+    '\ub4f1\uc7a5': ['\ub4f1\uc7a5', '\ub4b7\ubaa8\uc2b5', '\uc2e4\ub8e8\uc5e3'],
+}
+
+
+def score_clip_for_narration(narration: str, clip: dict[str, Any], used_clip_ids: set[str]) -> int:
+    filename = str(clip.get('filename', '')).lower()
+    text = narration.lower()
+    score = 0
+
+    for filename_keyword, narration_keywords in SHOT_KEYWORDS.items():
+        if filename_keyword in filename:
+            for keyword in narration_keywords:
+                if keyword.lower() in text:
+                    score += 4
+
+    raw_terms = re.findall(r'[0-9a-zA-Z\uac00-\ud7a3]+', text)
+    for term in raw_terms:
+        if len(term) >= 2 and term.lower() in filename:
+            score += 2
+
+    if str(clip.get('clip_id')) in used_clip_ids:
+        score -= 3
+
+    duration = clip.get('duration_seconds') or 0
+    if duration and duration >= 30:
+        score += 1
+    if duration and duration < 8:
+        score -= 1
+
+    return score
+
+
+def choose_clip_for_narration(
+    narration: str,
+    clips: list[dict[str, Any]],
+    fallback_index: int,
+    used_clip_ids: set[str],
+) -> dict[str, Any]:
+    if not clips:
+        return {}
+
+    scored = [(score_clip_for_narration(narration, clip, used_clip_ids), idx, clip) for idx, clip in enumerate(clips)]
+    best_score, _, best_clip = max(scored, key=lambda item: (item[0], -item[1]))
+    if best_score > 0:
+        return best_clip
+    return clips[fallback_index % len(clips)]
+
+
 def build_shot_list(project_title: str, narration_lines: list[str], footage_index: dict[str, Any]) -> str:
     clips = footage_index.get('clips') or []
     lines = [
@@ -524,9 +583,12 @@ def build_shot_list(project_title: str, narration_lines: list[str], footage_inde
         lines.append('| 1 | No narration lines found. | TBD | TBD | unknown | unknown |')
         return '\n'.join(lines) + '\n'
 
+    used_clip_ids: set[str] = set()
     for index, narration in enumerate(narration_lines, start=1):
-        clip = clips[(index - 1) % len(clips)] if clips else {}
+        clip = choose_clip_for_narration(narration, clips, index - 1, used_clip_ids)
         clip_id = clip.get('clip_id', 'TBD')
+        if clip_id != 'TBD':
+            used_clip_ids.add(str(clip_id))
         filename = clip.get('filename', 'TBD')
         duration = format_duration(clip.get('duration_seconds'))
         resolution = format_resolution(clip.get('width'), clip.get('height'))
@@ -534,7 +596,6 @@ def build_shot_list(project_title: str, narration_lines: list[str], footage_inde
         lines.append(f'| {index} | {safe_narration} | {clip_id} | {filename} | {duration} | {resolution} |')
 
     return '\n'.join(lines) + '\n'
-
 
 def write_scan_outputs(
     memories: list[ClipMemory],

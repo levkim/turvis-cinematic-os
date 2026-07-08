@@ -79,6 +79,20 @@ class FootageAnalyzerTests(unittest.TestCase):
         self.assertIn("Arrival narration.", shot_list)
         self.assertIn("TP-0002", shot_list)
 
+    def test_build_shot_list_prefers_filename_keywords_over_sequence_order(self):
+        analyzer = load_analyzer_module()
+        index = {
+            "clips": [
+                {"clip_id": "TP-0001", "filename": "가는길.MOV", "duration_seconds": 12.0, "width": 1920, "height": 1080},
+                {"clip_id": "TP-0002", "filename": "보즈지라 드래곤 크레스트 회전.MP4", "duration_seconds": 90.0, "width": 1920, "height": 1080},
+                {"clip_id": "TP-0003", "filename": "화성 드론 파노라마.MP4", "duration_seconds": 60.0, "width": 1920, "height": 1080},
+            ]
+        }
+
+        shot_list = analyzer.build_shot_list("Test Project", ["드래곤 크레스트 능선을 따라 걷는다."], index)
+
+        self.assertIn("TP-0002", shot_list)
+        self.assertIn("보즈지라 드래곤 크레스트 회전.MP4", shot_list)
     def test_write_scan_outputs_creates_footage_index_and_shot_list_files(self):
         analyzer = load_analyzer_module()
         with tempfile.TemporaryDirectory() as tmp:

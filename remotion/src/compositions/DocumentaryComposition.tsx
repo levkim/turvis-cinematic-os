@@ -91,7 +91,7 @@ export const DocumentaryComposition: React.FC<DocumentaryCompositionProps> = ({ 
           <ClipLayer clip={clip} />
         </Sequence>
       ))}
-      <FilmFade startFrame={0} durationInFrames={30} type="in" />
+      <FilmFade startFrame={0} durationInFrames={12} type="in" />
       <FilmFade startFrame={Math.max(0, timeline.composition.durationInFrames - 60)} durationInFrames={60} type="out" />
     </AbsoluteFill>
   );
