@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, asdict
@@ -61,6 +62,7 @@ class AnalyzerSettings:
     region: str
     destination: str
     skip_keyframes: bool
+    narration_path: Path | None
 
 
 @dataclass
@@ -92,6 +94,7 @@ def parse_args() -> argparse.Namespace:
     # Backward-compatible direct inputs. These are still accepted, but project.yaml is preferred.
     parser.add_argument("--input", default=None, help="Input folder containing video files")
     parser.add_argument("--project", default=None, help="Project slug, e.g. mangystau")
+    parser.add_argument("--title", default=None, help="Project title")
     parser.add_argument("--episode", default=None, help="Episode slug, e.g. day3")
     parser.add_argument("--prefix", default=None, help="Clip ID prefix, e.g. MG-D3")
     parser.add_argument("--output", default=None, help="Output folder for memory files")
@@ -99,6 +102,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--region", default=None, help="Region name")
     parser.add_argument("--destination", default=None, help="Destination or route name")
     parser.add_argument("--keyframes", default=None, help="Output folder for extracted keyframes")
+    parser.add_argument("--narration", default=None, help="Narration markdown path for shot-list generation")
     parser.add_argument("--skip-keyframes", action="store_true", help="Skip keyframe extraction")
     return parser.parse_args()
 
@@ -116,13 +120,14 @@ def resolve_settings(args: argparse.Namespace) -> AnalyzerSettings:
         config = load_project_config(args.project_folder, args.project_spec)
 
     project_id = args.project or get_nested(config, "project.id", "current-project")
-    project_title = get_nested(config, "project.title", project_id)
+    project_title = args.title or get_nested(config, "project.title", project_id)
     episode = args.episode or get_nested(config, "project.episode", get_nested(config, "project.id", "episode"))
     prefix = args.prefix or get_nested(config, "project.clip_prefix", slug_to_prefix(str(project_id)))
 
     input_value = args.input or get_nested(config, "paths.footage")
     output_value = args.output or get_nested(config, "paths.memory")
     keyframes_value = args.keyframes or get_nested(config, "paths.keyframes")
+    narration_value = args.narration or get_nested(config, "paths.narration")
 
     if not input_value:
         raise ValueError("Missing footage input. Provide --input or paths.footage in project.yaml")
@@ -135,6 +140,7 @@ def resolve_settings(args: argparse.Namespace) -> AnalyzerSettings:
 
     output_dir = Path(str(output_value)).expanduser().resolve()
     keyframes_root = Path(str(keyframes_value)).expanduser().resolve() if keyframes_value else output_dir / "keyframes"
+    narration_path = Path(str(narration_value)).expanduser().resolve() if narration_value else None
 
     return AnalyzerSettings(
         input_dir=Path(str(input_value)).expanduser().resolve(),
@@ -148,6 +154,7 @@ def resolve_settings(args: argparse.Namespace) -> AnalyzerSettings:
         region=str(region),
         destination=str(destination),
         skip_keyframes=bool(args.skip_keyframes),
+        narration_path=narration_path,
     )
 
 
@@ -430,6 +437,122 @@ Initial local scan only. Requires AI or human visual review using extracted keyf
     output_path.write_text(content, encoding="utf-8")
 
 
+
+def read_narration_lines(path: Path | None) -> list[str]:
+    if not path or not path.exists():
+        return []
+
+    lines: list[str] = []
+    in_fence = False
+    for raw_line in path.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip().lstrip('\ufeff')
+        if line.startswith(chr(96) * 3):
+            in_fence = not in_fence
+            continue
+        if in_fence or not line or line.startswith('#'):
+            continue
+
+        line = re.sub(r'^[-*]\s+', '', line).strip()
+        line = re.sub(r'^\d+[.)]\s+', '', line).strip()
+        line = re.sub(r'^\[[^\]]+\]\s*', '', line).strip()
+        if line:
+            lines.append(line)
+
+    return lines
+
+
+def format_duration(value: Any) -> str:
+    if value is None:
+        return 'unknown'
+    try:
+        return f'{float(value):.2f}s'
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def format_resolution(width: Any, height: Any) -> str:
+    if width and height:
+        return f'{width}x{height}'
+    return 'unknown'
+
+
+def build_footage_index(
+    memories: list[ClipMemory],
+    settings: AnalyzerSettings,
+    file_sizes: dict[str, int],
+) -> dict[str, Any]:
+    clips: list[dict[str, Any]] = []
+    for memory in memories:
+        tech = memory.technical_metadata
+        clips.append(
+            {
+                'clip_id': memory.clip_id,
+                'filename': memory.original_filename,
+                'extension': Path(memory.original_filename).suffix.lower(),
+                'size_bytes': file_sizes.get(memory.clip_id, 0),
+                'asset_path': memory.asset_path,
+                'duration_seconds': tech.get('duration_seconds'),
+                'width': tech.get('width'),
+                'height': tech.get('height'),
+                'fps': tech.get('fps'),
+                'codec': tech.get('codec'),
+                'memory_json': f'{memory.clip_id}.json',
+                'memory_markdown': f'{memory.clip_id}.md',
+            }
+        )
+
+    return {
+        'schema': 'turvis.footage.index.v0.1',
+        'project': {
+            'id': settings.project_id,
+            'title': settings.project_title,
+            'episode': settings.episode,
+        },
+        'footage_root': str(settings.input_dir),
+        'clips': clips,
+    }
+
+
+def build_shot_list(project_title: str, narration_lines: list[str], footage_index: dict[str, Any]) -> str:
+    clips = footage_index.get('clips') or []
+    lines = [
+        f'# Shot List — {project_title}',
+        '',
+        '| Beat | Narration | Candidate Clip | Filename | Duration | Resolution |',
+        '|---:|---|---|---|---:|---|',
+    ]
+
+    if not narration_lines:
+        lines.append('| 1 | No narration lines found. | TBD | TBD | unknown | unknown |')
+        return '\n'.join(lines) + '\n'
+
+    for index, narration in enumerate(narration_lines, start=1):
+        clip = clips[(index - 1) % len(clips)] if clips else {}
+        clip_id = clip.get('clip_id', 'TBD')
+        filename = clip.get('filename', 'TBD')
+        duration = format_duration(clip.get('duration_seconds'))
+        resolution = format_resolution(clip.get('width'), clip.get('height'))
+        safe_narration = narration.replace('|', '\\|')
+        lines.append(f'| {index} | {safe_narration} | {clip_id} | {filename} | {duration} | {resolution} |')
+
+    return '\n'.join(lines) + '\n'
+
+
+def write_scan_outputs(
+    memories: list[ClipMemory],
+    settings: AnalyzerSettings,
+    file_sizes: dict[str, int],
+) -> None:
+    footage_index = build_footage_index(memories, settings, file_sizes)
+    (settings.output_dir / 'footage-index.json').write_text(
+        json.dumps(footage_index, ensure_ascii=False, indent=2),
+        encoding='utf-8',
+    )
+
+    narration_lines = read_narration_lines(settings.narration_path)
+    shot_list = build_shot_list(settings.project_title, narration_lines, footage_index)
+    (settings.output_dir / 'shot-list.md').write_text(shot_list, encoding='utf-8')
+
 def write_batch_summary(memories: list[ClipMemory], output_dir: Path) -> None:
     total = len(memories)
     needs_review = sum(1 for m in memories if m.flags.get("needs_review"))
@@ -483,6 +606,7 @@ def main() -> None:
         return
 
     memories: list[ClipMemory] = []
+    file_sizes: dict[str, int] = {}
 
     for index, video_path in enumerate(video_files, start=1):
         clip_id = make_clip_id(settings.prefix, index)
@@ -500,12 +624,20 @@ def main() -> None:
             keyframes=keyframes,
         )
 
+        try:
+            file_sizes[clip_id] = video_path.stat().st_size
+        except OSError:
+            file_sizes[clip_id] = 0
+
         write_markdown(memory, settings.output_dir / f"{clip_id}.md")
         write_json(memory, settings.output_dir / f"{clip_id}.json")
         memories.append(memory)
         print(f"Created memory: {clip_id} — {video_path.name}")
 
     write_batch_summary(memories, settings.output_dir)
+    write_scan_outputs(memories, settings, file_sizes)
+    print(f"Created index: {settings.output_dir / 'footage-index.json'}")
+    print(f"Created shot list: {settings.output_dir / 'shot-list.md'}")
     print(f"\nDone. Created {len(memories)} clip memories in {settings.output_dir}")
 
 

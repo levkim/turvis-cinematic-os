@@ -50,9 +50,10 @@ def main() -> None:
 
     footage = require_value(get_nested(config, "paths.footage"), "paths.footage")
     keyframes = get_nested(config, "paths.keyframes")
+    narration = get_nested(config, "paths.narration")
     memory = require_value(get_nested(config, "paths.memory"), "paths.memory")
 
-    prefix = args.prefix or project_id.upper().replace("-", "_")
+    prefix = args.prefix or get_nested(config, "project.clip_prefix", project_id.upper().replace("-", "_"))
 
     command = [
         sys.executable,
@@ -62,6 +63,8 @@ def main() -> None:
         "--project",
         project_id,
         "--episode",
+        title,
+        "--title",
         title,
         "--prefix",
         prefix,
@@ -77,6 +80,8 @@ def main() -> None:
 
     if keyframes:
         command.extend(["--keyframes", keyframes])
+    if narration:
+        command.extend(["--narration", narration])
     if args.skip_keyframes:
         command.append("--skip-keyframes")
 
