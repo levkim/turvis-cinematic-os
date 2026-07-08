@@ -5,11 +5,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
+from typing import Any
+from urllib.parse import quote
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+FOOTAGE_SERVER_URL = "http://127.0.0.1:37678"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -35,22 +40,89 @@ def parse_resolution(resolution: str | None) -> tuple[int, int]:
     return int(match.group(1)), int(match.group(2))
 
 
-def build_remotion_timeline(config: dict, draft: dict) -> dict:
+def resolve_repo_path(value: str | None) -> Path | None:
+    if not value:
+        return None
+    path = Path(str(value)).expanduser()
+    return path if path.is_absolute() else REPO_ROOT / path
+
+
+def parse_shot_list_clip_ids(shot_list_path: Path) -> list[str]:
+    if not shot_list_path.exists():
+        return []
+
+    clip_ids: list[str] = []
+    for line in shot_list_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or stripped.startswith("|---") or "Candidate Clip" in stripped:
+            continue
+        parts = [part.strip() for part in stripped.split("|")]
+        if len(parts) >= 5 and parts[1].isdigit():
+            clip_id = parts[3]
+            if clip_id and clip_id != "TBD":
+                clip_ids.append(clip_id)
+    return clip_ids
+
+
+def load_footage_index(config: dict[str, Any]) -> dict[str, Any]:
+    memory_dir = resolve_repo_path(get_nested(config, "paths.memory"))
+    if not memory_dir:
+        return {}
+
+    index_path = memory_dir / "footage-index.json"
+    if not index_path.exists():
+        return {}
+    return json.loads(index_path.read_text(encoding="utf-8"))
+
+
+def load_footage_candidates(config: dict[str, Any], footage_index: dict[str, Any]) -> list[dict[str, Any]]:
+    memory_dir = resolve_repo_path(get_nested(config, "paths.memory"))
+    clips = footage_index.get("clips") or []
+    if not memory_dir:
+        return clips
+
+    by_id = {clip.get("clip_id"): clip for clip in clips}
+    ordered_ids = parse_shot_list_clip_ids(memory_dir / "shot-list.md")
+    ordered = [by_id[clip_id] for clip_id in ordered_ids if clip_id in by_id]
+    return ordered or clips
+
+
+def static_mount_name(config: dict[str, Any]) -> str:
+    return str(get_nested(config, "project.id", "current-project"))
+
+
+def clip_to_video_source(candidate: dict[str, Any], config: dict[str, Any]) -> str | None:
+    asset_path = candidate.get("asset_path") or candidate.get("filename")
+    if not asset_path:
+        return None
+
+    normalized = str(asset_path).replace("\\", "/").lstrip("/")
+    encoded = quote(normalized, safe="/-_.()")
+    return f"{FOOTAGE_SERVER_URL}/{encoded}"
+
+
+def build_remotion_timeline(config: dict[str, Any], draft: dict) -> dict:
     fps = int(draft.get("output", {}).get("fps", 30))
     resolution = get_nested(config, "output.resolution", "1920x1080")
     width, height = parse_resolution(resolution)
-    clips = []
+    footage_index = load_footage_index(config)
+    candidates = load_footage_candidates(config, footage_index)
 
-    for item in draft.get("clips", []):
+    clips = []
+    for index, item in enumerate(draft.get("clips", [])):
         start = seconds_to_frames(item.get("start_seconds", 0), fps)
         duration = seconds_to_frames(item.get("duration_seconds", 1), fps)
+        candidate = candidates[index % len(candidates)] if candidates else None
+        video_src = clip_to_video_source(candidate, config) if candidate else None
         clips.append({
             "id": item.get("id"),
-            "type": "video-placeholder",
+            "type": "video" if video_src else "video-placeholder",
             "startFrame": start,
             "durationInFrames": duration,
             "beat": item.get("beat"),
-            "src": item.get("footage", "TBD"),
+            "src": video_src or item.get("footage", "TBD"),
+            "sourceClipId": candidate.get("clip_id") if candidate else None,
+            "sourceFilename": candidate.get("filename") if candidate else None,
             "subtitle": item.get("subtitle", ""),
             "subtitleStyle": item.get("subtitle_treatment", "premium-documentary"),
             "transition": item.get("transition", "cut"),

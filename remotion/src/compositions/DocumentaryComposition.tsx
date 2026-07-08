@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, interpolate, Sequence, useCurrentFrame, Video } from 'remotion';
+import { AbsoluteFill, interpolate, OffthreadVideo, Sequence, useCurrentFrame } from 'remotion';
 import type { RemotionClip, TurvisRemotionTimeline } from '../types';
 import { CinematicSubtitle } from '../components/CinematicSubtitle';
 import { CinematicTitleCard } from '../components/CinematicTitleCard';
@@ -53,7 +53,7 @@ const ClipLayer: React.FC<{ clip: RemotionClip }> = ({ clip }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: 'black' }}>
       {isUsableVideoSource(clip) ? (
-        <Video
+        <OffthreadVideo
           src={clip.src}
           startFrom={0}
           style={{

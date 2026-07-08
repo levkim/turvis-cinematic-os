@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib.util
+import tempfile
 import unittest
 
 
@@ -47,6 +48,45 @@ class RemotionBridgeTests(unittest.TestCase):
         self.assertEqual(timeline["composition"]["width"], 3840)
         self.assertEqual(timeline["composition"]["height"], 2160)
 
+    def test_build_remotion_timeline_uses_footage_index_video_sources(self):
+        bridge = load_bridge_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            footage = root / "raw"
+            memory = root / "memory"
+            footage.mkdir()
+            memory.mkdir()
+            video = footage / "opening.mp4"
+            video.write_bytes(b"fake")
+            (memory / "footage-index.json").write_text(
+                '{"footage_root":"' + str(footage).replace('\\', '\\\\') + '","clips":[{"clip_id":"TP-0001","filename":"opening.mp4","asset_path":"opening.mp4"}]}',
+                encoding="utf-8",
+            )
+            (memory / "shot-list.md").write_text(
+                """# Shot List
+
+| Beat | Narration | Candidate Clip | Filename | Duration | Resolution |
+|---:|---|---|---|---:|---|
+| 1 | Opening line | TP-0001 | opening.mp4 | 1.00s | 1920x1080 |
+""",
+                encoding="utf-8",
+            )
+            config = {
+                "paths": {"memory": str(memory)},
+                "output": {"resolution": "1920x1080"},
+                "rules": {},
+            }
+            draft = {
+                "project": {"id": "test-video", "title": "test video"},
+                "output": {"fps": 30},
+                "clips": [{"id": "beat-01", "start_seconds": 0, "duration_seconds": 5, "beat": "Opening", "footage": "TBD", "subtitle": "Opening line"}],
+            }
+
+            timeline = bridge.build_remotion_timeline(config, draft)
+
+            self.assertEqual(timeline["clips"][0]["type"], "video")
+            self.assertTrue(timeline["clips"][0]["src"].startswith("http://127.0.0.1:37678/"))
+            self.assertIn("opening.mp4", timeline["clips"][0]["src"])
     def test_remotion_root_registers_root_component_for_cli_entrypoint(self):
         root_path = Path(__file__).resolve().parents[1] / "remotion" / "src" / "Root.tsx"
         source = root_path.read_text(encoding="utf-8")
