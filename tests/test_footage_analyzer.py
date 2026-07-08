@@ -84,7 +84,7 @@ class FootageAnalyzerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             narration = root / "narration.md"
-            narration.write_text("# Narration\n\nOpening narration.\n", encoding="utf-8-sig")
+            narration.write_text("# Narration\n\nPaste narration text for the current project here.\n\n```text\nOpening narration.\n```\n", encoding="utf-8-sig")
             settings = analyzer.AnalyzerSettings(
                 input_dir=root / "raw",
                 output_dir=root / "memory",

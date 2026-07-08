@@ -443,13 +443,12 @@ def read_narration_lines(path: Path | None) -> list[str]:
         return []
 
     lines: list[str] = []
-    in_fence = False
+    placeholder = 'Paste narration text for the current project here.'
     for raw_line in path.read_text(encoding='utf-8').splitlines():
         line = raw_line.strip().lstrip('\ufeff')
-        if line.startswith(chr(96) * 3):
-            in_fence = not in_fence
+        if not line or line.startswith('#') or line.startswith(chr(96) * 3):
             continue
-        if in_fence or not line or line.startswith('#'):
+        if line == placeholder:
             continue
 
         line = re.sub(r'^[-*]\s+', '', line).strip()
@@ -459,7 +458,6 @@ def read_narration_lines(path: Path | None) -> list[str]:
             lines.append(line)
 
     return lines
-
 
 def format_duration(value: Any) -> str:
     if value is None:
