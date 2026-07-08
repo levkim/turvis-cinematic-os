@@ -82,7 +82,8 @@ def allocate_durations(total_seconds: int, beats: list[dict[str, Any]]) -> list[
 
     weights = [weight_for_beat(beat) for beat in beats]
     total_weight = sum(weights)
-    raw = [max(4, int(round(total_seconds * weight / total_weight))) for weight in weights]
+    min_duration = 4 if total_seconds >= len(beats) * 4 else 1
+    raw = [max(min_duration, int(round(total_seconds * weight / total_weight))) for weight in weights]
 
     diff = total_seconds - sum(raw)
     index = 0
@@ -91,7 +92,7 @@ def allocate_durations(total_seconds: int, beats: list[dict[str, Any]]) -> list[
         if diff > 0:
             raw[pos] += 1
             diff -= 1
-        elif raw[pos] > 4:
+        elif raw[pos] > min_duration:
             raw[pos] -= 1
             diff += 1
         index += 1
@@ -147,7 +148,7 @@ def build_timeline(config: dict[str, Any], beats: list[dict[str, Any]]) -> dict[
 
 
 def build_markdown(timeline: dict[str, Any]) -> str:
-    content = f"# Timeline Draft — {timeline['project']['title']}\n\n"
+    content = f"# Timeline Draft â€” {timeline['project']['title']}\n\n"
     content += f"Duration: {timeline['output']['duration_seconds']}s  \n"
     content += f"Frames: {timeline['output']['duration_frames']}  \n\n"
     content += "| # | Beat | Start | Duration | Emotion | Rhythm | Silence | Footage | Transition |\n"
